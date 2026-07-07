@@ -57,9 +57,10 @@ constexpr int max_num_on_device_test_results = 128;
 /// dispatching tests to device
 OnDeviceTestResultView create_on_device_test_results();
 
-/// reports on-device test results after they have run, invoking an approprirate
-/// Catch2 mechanism indicate any failures
-void report_on_device_test_results(const OnDeviceTestResultView results);
+/// reports on-device test results after they have run, returning true if all
+/// on-device tests passed, false otherwise -- pass this to REQUIRE to trigger
+/// a failure resulting from on-device test failures
+bool on_device_tests_passed(const OnDeviceTestResultView results);
 
 /// creates an Atmosphere object that stores a column of data with the given
 /// number of vertical levels and the given planetary boundary height

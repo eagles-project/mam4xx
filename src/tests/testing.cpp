@@ -5,8 +5,6 @@
 
 #include "testing.hpp"
 
-#include <catch2/catch.hpp>
-
 #include <ekat_fpe.hpp>
 #include <ekat_kokkos_session.hpp>
 
@@ -21,7 +19,7 @@ OnDeviceTestResultView create_on_device_test_results() {
   return results;
 }
 
-void report_on_device_test_results(const OnDeviceTestResultView results) {
+bool on_device_tests_passed(const OnDeviceTestResultView results) {
   int num_failures = 0;
   auto results_h = Kokkos::create_mirror_view(results);
   Kokkos::deep_copy(results_h, results);
@@ -33,7 +31,7 @@ void report_on_device_test_results(const OnDeviceTestResultView results) {
       ++num_failures;
     }
   }
-  REQUIRE(num_failures == 0);
+  return num_failures == 0;
 }
 
 // A simple memory allocation pool for standalone ColumnViews to be used in

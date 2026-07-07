@@ -148,7 +148,7 @@ TEST_CASE("mam4_pcarbon_aging_1subarea", "mam4_aging_process") {
 
         // Passing in zeros for everything should give zeros back
         for (int imode = 0; imode < mam4::AeroConfig::num_modes(); ++imode) {
-          REQUIRE_ON_DEVICE(test_results, dgn_a[imode] != 0.0);
+          REQUIRE_ON_DEVICE(test_results, dgn_a[imode] == 0.0);
           REQUIRE_ON_DEVICE(test_results, qnum_cur[imode] == 0.0);
           REQUIRE_ON_DEVICE(test_results, qnum_del_cond[imode] == 0.0);
           REQUIRE_ON_DEVICE(test_results, qnum_del_coag[imode] == 0.0);
@@ -172,5 +172,5 @@ TEST_CASE("mam4_pcarbon_aging_1subarea", "mam4_aging_process") {
           }
         }
       });
-  mam4::testing::report_on_device_test_results(test_results);
+  REQUIRE(mam4::testing::on_device_tests_passed(test_results));
 }
