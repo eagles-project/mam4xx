@@ -554,7 +554,8 @@ public:
                                 _num_pairs,                 // out
                                 _diameter_cutoff,           // out
                                 _ln_dia_cutoff, _diameter_threshold);
-    const AeroSpeciesView &aero_species = aero_config.aero_species;
+    auto aero_species_h = Kokkos::create_mirror_view(aero_config.aero_species);
+    Kokkos::deep_copy(aero_species_h, aero_config.aero_species);
 
     for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
       _dgnum_amode[imode] = modes(imode).nom_diameter;
@@ -570,7 +571,7 @@ public:
     //     150, 115, 150, 12, 58.5, 135, 250092}; // [kg/kmol]
     // for (int iaero = 0; iaero < AeroConfig::num_aerosol_ids(); ++iaero) {
     //   _mass_2_vol[iaero] =
-    //      molecular_weight_rename[iaero] / aero_species(iaero).density;
+    //      molecular_weight_rename[iaero] / aero_species_h(iaero).density;
     // }
     // FIXME.
     // Molecular weights (MW) of aerosol species have units of kg/mol,
@@ -580,8 +581,8 @@ public:
     const Real unit_factor = 1000; // from kg/mol to kg/kmol
 
     for (int iaero = 0; iaero < AeroConfig::num_aerosol_ids(); ++iaero) {
-      _mass_2_vol[iaero] = aero_species(iaero).molecular_weight /
-                           aero_species(iaero).density * unit_factor;
+      _mass_2_vol[iaero] = aero_species_h(iaero).molecular_weight /
+                           aero_species_h(iaero).density * unit_factor;
     }
     // Correction because of differences in MWs between mam4xx and mam4
     int iaer_soa = aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::SOA);
@@ -589,11 +590,11 @@ public:
     int iaer_pom = aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::POM);
 
     _mass_2_vol[iaer_soa] =
-        config_._molecular_weight_soa / aero_species(iaer_soa).density;
+        config_._molecular_weight_soa / aero_species_h(iaer_soa).density;
     _mass_2_vol[iaer_so4] =
-        config_._molecular_weight_so4 / aero_species(iaer_so4).density;
+        config_._molecular_weight_so4 / aero_species_h(iaer_so4).density;
     _mass_2_vol[iaer_pom] =
-        config_._molecular_weight_pom / aero_species(iaer_pom).density;
+        config_._molecular_weight_pom / aero_species_h(iaer_pom).density;
 
   } // end(init)
 

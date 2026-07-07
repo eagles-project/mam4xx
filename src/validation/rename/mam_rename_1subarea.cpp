@@ -10,8 +10,8 @@ using namespace skywalker;
 
 void mam_rename_1subarea(Ensemble *ensemble) {
 
-  auto aero_species =
-      mam4::aero_species_on_device(mam4::default_aero_species());
+  auto aero_species_h = mam4::default_aero_species();
+  auto aero_species = mam4::aero_species_on_device(aero_species_h);
 
   ensemble->process([=](const Input &input, Output &output) {
     int nlev = 1;
@@ -99,7 +99,7 @@ void mam_rename_1subarea(Ensemble *ensemble) {
         150, 115, 150, 12, 58.5, 135, 250092}; // [kg/kmol]
     for (int iaero = 0; iaero < naerosol_species; ++iaero) {
       mass_2_vol[iaero] =
-          molecular_weight_rename[iaero] / aero_species(iaero).density;
+          molecular_weight_rename[iaero] / aero_species_h(iaero).density;
     }
 
     this_rename.mam_rename_1subarea_(iscloudy, smallest_dryvol_value,

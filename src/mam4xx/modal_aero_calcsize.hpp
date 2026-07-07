@@ -18,9 +18,13 @@ namespace modal_aero_calcsize {
 
 constexpr int maxd_aspectype = ndrop::maxd_aspectype;
 
+// NOTE: init_calcsize is only called from the CalcsizeData's init method, so we
+// can use host-side NOTE: aerosol species properties. We should really get rid
+// of these class-like structures; they NOTE: don't really work well on GPUs.
+// -JNJ, 2026-07-07
 KOKKOS_INLINE_FUNCTION
 void init_calcsize(
-    const AeroSpeciesView &aero_species,
+    const AeroSpeciesHostView &aero_species,
     Real inv_density[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
     Real num2vol_ratio_min[AeroConfig::num_modes()],
     Real num2vol_ratio_max[AeroConfig::num_modes()],
@@ -141,12 +145,11 @@ struct CalcsizeData {
   bool update_mmr = false;
 
   void initialize() {
-    auto aero_species = aero_species_on_device(default_aero_species());
     ndrop::get_e3sm_parameters(nspec_amode, lspectype_amode, lmassptr_amode,
                                numptr_amode, specdens_amode, spechygro, mam_idx,
                                mam_cnst_idx);
 
-    init_calcsize(aero_species, inv_density, num2vol_ratio_min,
+    init_calcsize(default_aero_species(), inv_density, num2vol_ratio_min,
                   num2vol_ratio_max, num2vol_ratio_max_nmodes,
                   num2vol_ratio_min_nmodes, num2vol_ratio_nom_nmodes,
                   dgnmin_nmodes, dgnmax_nmodes, dgnnom_nmodes,

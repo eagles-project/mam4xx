@@ -9,9 +9,6 @@
 using namespace skywalker;
 
 void mam_pcarbon_aging_1subarea(Ensemble *ensemble) {
-  auto aero_species =
-      mam4::aero_species_on_device(mam4::default_aero_species());
-
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     if (!input.has_array("dgn_a")) {
@@ -91,9 +88,9 @@ void mam_pcarbon_aging_1subarea(Ensemble *ensemble) {
     }
     const unsigned n_so4_monolayers_pcage = 8;
     mam4::aging::mam_pcarbon_aging_1subarea(
-        aero_species, n_so4_monolayers_pcage, dgn_a_f.data(), qnum_cur_f.data(),
-        qnum_del_cond_f.data(), qnum_del_coag_f.data(), qaer_cur_c,
-        qaer_del_cond_c, qaer_del_coag_c, qaer_del_coag_in_c);
+        mam4::default_aero_species(), n_so4_monolayers_pcage, dgn_a_f.data(),
+        qnum_cur_f.data(), qnum_del_cond_f.data(), qnum_del_coag_f.data(),
+        qaer_cur_c, qaer_del_cond_c, qaer_del_coag_c, qaer_del_coag_in_c);
 
     n = 0;
     for (int imode = 0; imode < mam4::AeroConfig::max_agepair(); ++imode) {

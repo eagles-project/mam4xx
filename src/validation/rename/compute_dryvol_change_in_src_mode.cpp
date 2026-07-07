@@ -10,8 +10,7 @@ using namespace skywalker;
 
 void compute_dryvol_change_in_src_mode(Ensemble *ensemble) {
 
-  auto aero_species =
-      mam4::aero_species_on_device(mam4::default_aero_species());
+  auto aero_species_h = mam4::default_aero_species();
 
   ensemble->process([=](const Input &input, Output &output) {
     const int nmodes = mam4::AeroConfig::num_modes();
@@ -57,7 +56,7 @@ void compute_dryvol_change_in_src_mode(Ensemble *ensemble) {
         150, 115, 150, 12, 58.5, 135, 250092}; // [kg/kmol]
     for (int iaero = 0; iaero < naerosol_species; ++iaero) {
       mass_2_vol[iaero] =
-          molecular_weight_rename[iaero] / aero_species(iaero).density;
+          molecular_weight_rename[iaero] / aero_species_h(iaero).density;
     }
 
     Real dryvol[4] = {zero};

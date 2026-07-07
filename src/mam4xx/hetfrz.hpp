@@ -908,10 +908,10 @@ Real get_aer_radius(const Real specdens, const Real aermc, const Real aernum) {
   return mam4::cbrt(3.0 / (4.0 * Constants::pi * specdens) * aermc / aernum);
 }
 
-KOKKOS_INLINE_FUNCTION
-void calculate_mass_mean_radius(
-    const AeroSpeciesView &aero_species, const Real bcmac, const Real bcmpc,
-    const Real dmac, const Real dmc,
+template <typename AeroSpeciesHostOrDeviceView>
+KOKKOS_INLINE_FUNCTION void calculate_mass_mean_radius(
+    const AeroSpeciesHostOrDeviceView &aero_species, const Real bcmac,
+    const Real bcmpc, const Real dmac, const Real dmc,
     const Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec],
     Real hetraer[Hetfrz::hetfrz_aer_nspec]) {
 
@@ -952,9 +952,9 @@ void calculate_mass_mean_radius(
   }
 }
 
-KOKKOS_INLINE_FUNCTION
-void calculate_coated_fraction(
-    const AeroSpeciesView &aero_species, const Real air_density,
+template <typename AeroSpeciesHostOrDeviceView>
+KOKKOS_INLINE_FUNCTION void calculate_coated_fraction(
+    const AeroSpeciesHostOrDeviceView &aero_species, const Real air_density,
     const Real so4mac, const Real pommac, const Real mommac, const Real soamac,
     const Real dmac, const Real bcmac, const Real mommpc, const Real pommpc,
     const Real bcmpc, const Real so4mc, const Real pommc, const Real soamc,

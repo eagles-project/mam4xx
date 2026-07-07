@@ -66,9 +66,10 @@ namespace aging {
 //------------------------------------------------------------------------
 // calculate fractions of aged pom/bc to be transferred to accum mode, aerosol
 // change due to condenstion and coagulation
-KOKKOS_INLINE_FUNCTION
-void mam_pcarbon_aging_frac(
-    const AeroSpeciesView &aero_species, const unsigned n_so4_monolayers_pcage,
+template <typename AeroSpeciesHostOrDeviceView>
+KOKKOS_INLINE_FUNCTION void mam_pcarbon_aging_frac(
+    const AeroSpeciesHostOrDeviceView &aero_species,
+    const unsigned n_so4_monolayers_pcage,
     const Real dgn_a[AeroConfig::num_modes()], // dry geometric mean diameter of
                                                // number distribution [m]
     const Real qaer_cur[AeroConfig::num_aerosol_ids()]
@@ -234,9 +235,10 @@ void transfer_cond_coag_mass_to_accum(
   qaer_del_coag[nsrc] = 0.0;
 }
 
-KOKKOS_INLINE_FUNCTION
-void mam_pcarbon_aging_1subarea(
-    const AeroSpeciesView &aero_species, const unsigned n_so4_monolayers_pcage,
+template <typename AeroSpeciesHostOrDeviceView>
+KOKKOS_INLINE_FUNCTION void mam_pcarbon_aging_1subarea(
+    const AeroSpeciesHostOrDeviceView &aero_species,
+    const unsigned n_so4_monolayers_pcage,
     const Real dgn_a[AeroConfig::num_modes()], // dry geometric mean diameter of
                                                // number distribution [m]
     Real qnum_cur[AeroConfig::num_modes()],    // aerosol number mixing ratio
