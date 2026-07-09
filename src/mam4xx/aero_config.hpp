@@ -24,7 +24,8 @@ public:
 
   // Constructor with specially configured aerosol species.
   KOKKOS_INLINE_FUNCTION
-  AeroConfig(const AeroSpeciesView &aero_species = aero_species_on_device(default_aero_species()))
+  AeroConfig(const AeroSpeciesView &aero_species =
+                 aero_species_on_device(default_aero_species()))
       : aero_species(aero_species) {}
 
   // Copy constructor.

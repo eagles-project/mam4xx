@@ -115,7 +115,7 @@ public:
   // NOTE: that both diags and tends are const below--this means their views
   // NOTE: are fixed, but the data in those views is allowed to vary.
   KOKKOS_INLINE_FUNCTION
-  void compute_tendencies(const ThreadTeam &team,
+  void compute_tendencies(const AeroConfig &aero_config, const ThreadTeam &team,
                           Real t, Real dt, const Atmosphere &atm,
                           const Surface &sfc, const Prognostics &progs,
                           const Diagnostics &diags,
@@ -1480,7 +1480,8 @@ inline void Hetfrz::init(const AeroConfig &aero_config,
 // NOTE: that both diags and tends are const below--this means their views
 // NOTE: are fixed, but the data in those views is allowed to vary.
 KOKKOS_INLINE_FUNCTION
-void Hetfrz::compute_tendencies(const ThreadTeam &team, Real t, Real dt,
+void Hetfrz::compute_tendencies(const AeroConfig &aero_config,
+                                const ThreadTeam &team, Real t, Real dt,
                                 const Atmosphere &atm, const Surface &sfc,
                                 const Prognostics &progs,
                                 const Diagnostics &diags,
@@ -1495,8 +1496,8 @@ void Hetfrz::compute_tendencies(const ThreadTeam &team, Real t, Real dt,
   // to the relevant cloud-microphysical parameterization.
   const int nk = atm.num_levels();
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int k) {
-    hetfrz::hetfrz_rates_1box(aero_config.aero_species, k, dt, atm, progs, diags,
-                              tends, config_, dim_theta, pdf_imm_theta);
+    hetfrz::hetfrz_rates_1box(aero_config.aero_species, k, dt, atm, progs,
+                              diags, tends, config_, dim_theta, pdf_imm_theta);
   });
 }
 

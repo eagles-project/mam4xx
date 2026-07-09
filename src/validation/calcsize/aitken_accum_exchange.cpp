@@ -70,7 +70,7 @@ void aitken_accum_exchange(Ensemble *ensemble) {
     const Real dryvol_c_accsv = input.get("dryvol_c_accsv");
 
     auto aero_species_h = Kokkos::create_mirror_view(mam4_config.aero_species);
-    Kokkos::deep_copy(aero_species_h, aero_species);
+    Kokkos::deep_copy(aero_species_h, mam4_config.aero_species);
     Real inv_density[nmodes][nspec];
 
     int count = 0;
