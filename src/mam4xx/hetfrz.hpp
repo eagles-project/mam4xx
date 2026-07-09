@@ -39,6 +39,8 @@ public:
   void init(const AeroConfig &aero_config,
             const Config &process_config = Config());
 
+  AeroConfig aero_config;
+
   static constexpr Real amu = 1.66053886e-27; // (BAD CONSTANT)
 
   // frequ. of vibration [s-1] higher freq. (as in P&K, consistent with Anupam's
@@ -99,19 +101,21 @@ public:
   static constexpr Real pdf_d_theta =
       (179. - 1.) / 180. * Constants::pi / (pdf_n_theta - 1);
 
+  /*
   // validate -- validates the given atmospheric state and prognostics against
   // assumptions made by this implementation, returning true if the states are
   // valid, false if not
   KOKKOS_INLINE_FUNCTION
-  bool validate(const AeroConfig &config, const ThreadTeam &team,
+  bool validate(const ThreadTeam &team,
                 const Atmosphere &atm, const Surface &sfc,
                 const Prognostics &progs) const;
+  */
 
   // compute_tendencies -- computes tendencies and updates diagnostics
   // NOTE: that both diags and tends are const below--this means their views
   // NOTE: are fixed, but the data in those views is allowed to vary.
   KOKKOS_INLINE_FUNCTION
-  void compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
+  void compute_tendencies(const ThreadTeam &team,
                           Real t, Real dt, const Atmosphere &atm,
                           const Surface &sfc, const Prognostics &progs,
                           const Diagnostics &diags,
@@ -1468,6 +1472,7 @@ void hetfrz_rates_1box(const AeroSpeciesView &aero_species, const int k,
 inline void Hetfrz::init(const AeroConfig &aero_config,
                          const Config &process_config) {
   config_ = process_config;
+  this->aero_config = aero_config;
   hetfrz::calculate_vars_for_pdf_imm(dim_theta, pdf_imm_theta);
 };
 
@@ -1475,8 +1480,7 @@ inline void Hetfrz::init(const AeroConfig &aero_config,
 // NOTE: that both diags and tends are const below--this means their views
 // NOTE: are fixed, but the data in those views is allowed to vary.
 KOKKOS_INLINE_FUNCTION
-void Hetfrz::compute_tendencies(const AeroConfig &config,
-                                const ThreadTeam &team, Real t, Real dt,
+void Hetfrz::compute_tendencies(const ThreadTeam &team, Real t, Real dt,
                                 const Atmosphere &atm, const Surface &sfc,
                                 const Prognostics &progs,
                                 const Diagnostics &diags,
@@ -1491,7 +1495,7 @@ void Hetfrz::compute_tendencies(const AeroConfig &config,
   // to the relevant cloud-microphysical parameterization.
   const int nk = atm.num_levels();
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int k) {
-    hetfrz::hetfrz_rates_1box(config.aero_species, k, dt, atm, progs, diags,
+    hetfrz::hetfrz_rates_1box(aero_config.aero_species, k, dt, atm, progs, diags,
                               tends, config_, dim_theta, pdf_imm_theta);
   });
 }

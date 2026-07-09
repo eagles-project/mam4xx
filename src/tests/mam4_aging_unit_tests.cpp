@@ -17,8 +17,7 @@ using mam4::Real;
 
 TEST_CASE("test_aging_pairs", "mam4_aging_pairs") {
   // mam4 aging assumes that max_agepair is 1
-  mam4::AeroConfig mam4_config(
-      mam4::aero_species_on_device(mam4::default_aero_species()));
+  mam4::AeroConfig mam4_config;
   REQUIRE(mam4_config.max_agepair() == 1);
 }
 

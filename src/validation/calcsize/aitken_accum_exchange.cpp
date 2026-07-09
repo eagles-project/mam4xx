@@ -13,9 +13,6 @@ void aitken_accum_exchange(Ensemble *ensemble) {
   // We don't need any settings for this particular test.
   // Settings settings = ensemble->settings();
 
-  auto aero_species =
-      mam4::aero_species_on_device(mam4::default_aero_species());
-
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     Real dt = input.get("dt");
@@ -27,7 +24,7 @@ void aitken_accum_exchange(Ensemble *ensemble) {
     mam4::Diagnostics diags = mam4::validation::create_diagnostics(nlev);
     mam4::Tendencies tends = mam4::validation::create_tendencies(nlev);
 
-    mam4::AeroConfig mam4_config(aero_species);
+    mam4::AeroConfig mam4_config;
     mam4::CalcSizeProcess process(mam4_config);
     const int nmodes = mam4_config.num_modes();
     const int nspec = mam4_config.num_aerosol_ids();
@@ -72,7 +69,7 @@ void aitken_accum_exchange(Ensemble *ensemble) {
     const Real dryvol_i_accsv = input.get("dryvol_i_accsv");
     const Real dryvol_c_accsv = input.get("dryvol_c_accsv");
 
-    auto aero_species_h = Kokkos::create_mirror_view(aero_species);
+    auto aero_species_h = Kokkos::create_mirror_view(mam4_config.aero_species);
     Kokkos::deep_copy(aero_species_h, aero_species);
     Real inv_density[nmodes][nspec];
 

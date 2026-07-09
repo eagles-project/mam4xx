@@ -17,9 +17,7 @@ void compute_tendencies(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // Fetch ensemble parameters
 
-    auto aero_species =
-        mam4::aero_species_on_device(mam4::default_aero_species());
-    mam4::AeroConfig mam4_config(aero_species);
+    mam4::AeroConfig mam4_config;
 
     Real dt = input.get("dt");
     Real t = 0;

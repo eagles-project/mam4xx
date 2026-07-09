@@ -10,9 +10,6 @@ using namespace skywalker;
 
 void hetfrz_rates_1box(Ensemble *ensemble) {
 
-  auto aero_species =
-      mam4::aero_species_on_device(mam4::default_aero_species());
-
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     if (!input.has("dt")) {
@@ -677,7 +674,7 @@ void hetfrz_rates_1box(Ensemble *ensemble) {
       Kokkos::deep_copy(diags.activation_fraction[imode], host_column);
     }
 
-    mam4::AeroConfig mam4_config(aero_species);
+    mam4::AeroConfig mam4_config;
     mam4::HetfrzProcess process(mam4_config);
     auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
     Real t = 0.0;

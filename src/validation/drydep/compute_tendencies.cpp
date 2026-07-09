@@ -10,9 +10,7 @@ using namespace skywalker;
 
 void compute_tendencies(Ensemble *ensemble) {
 
-  auto aero_species =
-      mam4::aero_species_on_device(mam4::default_aero_species());
-  mam4::AeroConfig mam4_config(aero_species);
+  mam4::AeroConfig mam4_config;
 
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {

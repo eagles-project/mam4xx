@@ -58,9 +58,6 @@ void compute_tendencies(Ensemble *ensemble) {
   // We don't need any settings for this particular test.
   // Settings settings = ensemble->settings();
 
-  auto aero_species =
-      mam4::aero_species_on_device(mam4::default_aero_species());
-
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     const int nlev = 72;
@@ -96,7 +93,7 @@ void compute_tendencies(Ensemble *ensemble) {
     mam4::Prognostics prognostics = mam4::validation::create_prognostics(nlev);
     mam4::Diagnostics diagnostics = mam4::validation::create_diagnostics(nlev);
     mam4::Tendencies tendencies = mam4::validation::create_tendencies(nlev);
-    mam4::AeroConfig aero_config(aero_species);
+    mam4::AeroConfig aero_config;
     mam4::ConvProc::Config convproc_config;
     convproc_config.convproc_do_aer = true;
     convproc_config.convproc_do_gas = false;

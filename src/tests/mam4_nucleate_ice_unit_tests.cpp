@@ -26,9 +26,7 @@ TEST_CASE("test_wv_sat_svp_to_qsat", "mam4_nucleate_ice_process") {
 
   std::ostringstream ss;
 
-  auto aero_species =
-      mam4::aero_species_on_device(mam4::default_aero_species());
-  mam4::AeroConfig mam4_config(aero_species);
+  mam4::AeroConfig mam4_config;
   Real es, p;
   // FIXME: do these numbers make sense?
   es = 101325.0 + 1;
@@ -64,9 +62,7 @@ TEST_CASE("test_wv_sat_qsat_water", "mam4_nucleate_ice_process") {
   // NOTE: qs output comes directly from wv_sat_svp_to_qsat() (above), so we
   // won't test those values here
 
-  auto aero_species =
-      mam4::aero_species_on_device(mam4::default_aero_species());
-  mam4::AeroConfig mam4_config(aero_species);
+  mam4::AeroConfig mam4_config;
   Real es, p, qs;
   Real t[4] = {273, 298, 323, 373};
   // for temperature \in [273, 373]K (~[0, 100]C) es is \in [615, 1.009e5]
@@ -114,9 +110,7 @@ TEST_CASE("test_GoffGratch_svp_ice", "mam4_nucleate_ice_process") {
 
   std::ostringstream ss;
 
-  auto aero_species =
-      mam4::aero_species_on_device(mam4::default_aero_species());
-  mam4::AeroConfig mam4_config(aero_species);
+  mam4::AeroConfig mam4_config;
   Real t[4] = {173, 198, 223, 273};
   Real es;
   // for temperature \in [173, 273]K (~[-100, 0]C) es is \in [1.0e-3, 604]
@@ -142,9 +136,7 @@ TEST_CASE("test_calculate_regm_nucleati", "mam4_nucleate_ice_process") {
 
   std::ostringstream ss;
 
-  auto aero_species =
-      mam4::aero_species_on_device(mam4::default_aero_species());
-  mam4::AeroConfig mam4_config(aero_species);
+  mam4::AeroConfig mam4_config;
   Real w_vlc, Na, regm;
   // FIXME: do these numbers make sense?
   w_vlc = 0.2;
@@ -168,9 +160,7 @@ TEST_CASE("test_calculate_RHw_hf", "mam4_nucleate_ice_process") {
 
   std::ostringstream ss;
 
-  auto aero_species =
-      mam4::aero_species_on_device(mam4::default_aero_species());
-  mam4::AeroConfig mam4_config(aero_species);
+  mam4::AeroConfig mam4_config;
   Real temperature, lnw, RHw;
   // FIXME: do these numbers make sense?
   temperature = -40.0;

@@ -13,9 +13,6 @@ void compute_tendencies(Ensemble *ensemble) {
   // We don't need any settings for this particular test.
   // Settings settings = ensemble->settings();
 
-  auto aero_species =
-      mam4::aero_species_on_device(mam4::default_aero_species());
-
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     // Fetch ensemble parameters
@@ -35,7 +32,7 @@ void compute_tendencies(Ensemble *ensemble) {
     const Real so4_sz_thresh_icenuc =
         input.get_array("so4_sz_thresh_icenuc")[0];
 
-    mam4::AeroConfig mam4_config(aero_species);
+    mam4::AeroConfig mam4_config;
     mam4::NucleateIce::Config nucleate_ice_config(subgrid,
                                                   so4_sz_thresh_icenuc);
     mam4::NucleateIceProcess process(mam4_config, nucleate_ice_config);
