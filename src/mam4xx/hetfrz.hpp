@@ -39,6 +39,8 @@ public:
   void init(const AeroConfig &aero_config,
             const Config &process_config = Config());
 
+  AeroConfig aero_config;
+
   static constexpr Real amu = 1.66053886e-27; // (BAD CONSTANT)
 
   // frequ. of vibration [s-1] higher freq. (as in P&K, consistent with Anupam's
@@ -99,19 +101,21 @@ public:
   static constexpr Real pdf_d_theta =
       (179. - 1.) / 180. * Constants::pi / (pdf_n_theta - 1);
 
+  /*
   // validate -- validates the given atmospheric state and prognostics against
   // assumptions made by this implementation, returning true if the states are
   // valid, false if not
   KOKKOS_INLINE_FUNCTION
-  bool validate(const AeroConfig &config, const ThreadTeam &team,
+  bool validate(const ThreadTeam &team,
                 const Atmosphere &atm, const Surface &sfc,
                 const Prognostics &progs) const;
+  */
 
   // compute_tendencies -- computes tendencies and updates diagnostics
   // NOTE: that both diags and tends are const below--this means their views
   // NOTE: are fixed, but the data in those views is allowed to vary.
   KOKKOS_INLINE_FUNCTION
-  void compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
+  void compute_tendencies(const AeroConfig &aero_config, const ThreadTeam &team,
                           Real t, Real dt, const Atmosphere &atm,
                           const Surface &sfc, const Prognostics &progs,
                           const Diagnostics &diags,
@@ -908,9 +912,10 @@ Real get_aer_radius(const Real specdens, const Real aermc, const Real aernum) {
   return mam4::cbrt(3.0 / (4.0 * Constants::pi * specdens) * aermc / aernum);
 }
 
-KOKKOS_INLINE_FUNCTION
-void calculate_mass_mean_radius(
-    const Real bcmac, const Real bcmpc, const Real dmac, const Real dmc,
+template <typename AeroSpeciesHostOrDeviceView>
+KOKKOS_INLINE_FUNCTION void calculate_mass_mean_radius(
+    const AeroSpeciesHostOrDeviceView &aero_species, const Real bcmac,
+    const Real bcmpc, const Real dmac, const Real dmc,
     const Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec],
     Real hetraer[Hetfrz::hetfrz_aer_nspec]) {
 
@@ -951,12 +956,13 @@ void calculate_mass_mean_radius(
   }
 }
 
-KOKKOS_INLINE_FUNCTION
-void calculate_coated_fraction(
-    const Real air_density, const Real so4mac, const Real pommac,
-    const Real mommac, const Real soamac, const Real dmac, const Real bcmac,
-    const Real mommpc, const Real pommpc, const Real bcmpc, const Real so4mc,
-    const Real pommc, const Real soamc, const Real mommc, const Real dmc,
+template <typename AeroSpeciesHostOrDeviceView>
+KOKKOS_INLINE_FUNCTION void calculate_coated_fraction(
+    const AeroSpeciesHostOrDeviceView &aero_species, const Real air_density,
+    const Real so4mac, const Real pommac, const Real mommac, const Real soamac,
+    const Real dmac, const Real bcmac, const Real mommpc, const Real pommpc,
+    const Real bcmpc, const Real so4mc, const Real pommc, const Real soamc,
+    const Real mommc, const Real dmc,
     const Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec],
     const Real total_cloudborne_aer_num[Hetfrz::hetfrz_aer_nspec],
     const Real hetraer[Hetfrz::hetfrz_aer_nspec],
@@ -1125,7 +1131,8 @@ void calculate_vars_for_water_activity(
 }
 
 KOKKOS_INLINE_FUNCTION
-void hetfrz_rates_1box(const int k, const Real dt, const Atmosphere &atm,
+void hetfrz_rates_1box(const AeroSpeciesView &aero_species, const int k,
+                       const Real dt, const Atmosphere &atm,
                        const Prognostics &progs, const Diagnostics &diags,
                        const Tendencies &tends, const Hetfrz::Config &config,
                        const Real dim_theta[Hetfrz::pdf_n_theta],
@@ -1331,7 +1338,7 @@ void hetfrz_rates_1box(const int k, const Real dt, const Atmosphere &atm,
 
   Real hetraer[Hetfrz::hetfrz_aer_nspec] = {0.0};
 
-  calculate_mass_mean_radius(bcmac, bcmpc, dmac, dmc,
+  calculate_mass_mean_radius(aero_species, bcmac, bcmpc, dmac, dmc,
                              total_interstitial_aer_num, hetraer);
 
   Real total_aer_num[Hetfrz::hetfrz_aer_nspec] = {0.0};
@@ -1342,10 +1349,11 @@ void hetfrz_rates_1box(const int k, const Real dt, const Atmosphere &atm,
   totna500 = 0.0;
 
   calculate_coated_fraction(
-      air_density, so4mac, pommac, mommac, soamac, dmac, bcmac, mommpc, pommpc,
-      bcmpc, so4mc, pommc, soamc, mommc, dmc, total_interstitial_aer_num,
-      total_cloudborne_aer_num, hetraer, total_aer_num, coated_aer_num,
-      uncoated_aer_num, dstcoat, na500, totna500);
+      aero_species, air_density, so4mac, pommac, mommac, soamac, dmac, bcmac,
+      mommpc, pommpc, bcmpc, so4mc, pommc, soamc, mommc, dmc,
+      total_interstitial_aer_num, total_cloudborne_aer_num, hetraer,
+      total_aer_num, coated_aer_num, uncoated_aer_num, dstcoat, na500,
+      totna500);
 
   Real awcam[Hetfrz::hetfrz_aer_nspec] = {0.0};
   Real awfacm[Hetfrz::hetfrz_aer_nspec] = {0.0};
@@ -1464,6 +1472,7 @@ void hetfrz_rates_1box(const int k, const Real dt, const Atmosphere &atm,
 inline void Hetfrz::init(const AeroConfig &aero_config,
                          const Config &process_config) {
   config_ = process_config;
+  this->aero_config = aero_config;
   hetfrz::calculate_vars_for_pdf_imm(dim_theta, pdf_imm_theta);
 };
 
@@ -1471,7 +1480,7 @@ inline void Hetfrz::init(const AeroConfig &aero_config,
 // NOTE: that both diags and tends are const below--this means their views
 // NOTE: are fixed, but the data in those views is allowed to vary.
 KOKKOS_INLINE_FUNCTION
-void Hetfrz::compute_tendencies(const AeroConfig &config,
+void Hetfrz::compute_tendencies(const AeroConfig &aero_config,
                                 const ThreadTeam &team, Real t, Real dt,
                                 const Atmosphere &atm, const Surface &sfc,
                                 const Prognostics &progs,
@@ -1487,8 +1496,8 @@ void Hetfrz::compute_tendencies(const AeroConfig &config,
   // to the relevant cloud-microphysical parameterization.
   const int nk = atm.num_levels();
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int k) {
-    hetfrz::hetfrz_rates_1box(k, dt, atm, progs, diags, tends, config_,
-                              dim_theta, pdf_imm_theta);
+    hetfrz::hetfrz_rates_1box(aero_config.aero_species, k, dt, atm, progs,
+                              diags, tends, config_, dim_theta, pdf_imm_theta);
   });
 }
 

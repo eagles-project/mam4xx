@@ -9,6 +9,8 @@
 using namespace skywalker;
 
 void aero_model_wetdep(Ensemble *ensemble) {
+  mam4::AeroConfig aero_config;
+
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename mam4::HostType::view_1d<Real>;
     using View2DHost = typename mam4::HostType::view_2d<Real>;
@@ -115,23 +117,24 @@ void aero_model_wetdep(Ensemble *ensemble) {
         mam4::validation::get_input_in_columnview(input, "dlf"); //
     mam4::wetdep::View1D aerdepwetcw("aerdepwetcw", mam4::aero_model::pcnst);
     mam4::wetdep::View1D aerdepwetis("aerdepwetis", mam4::aero_model::pcnst);
-    const int num_modes = mam4::AeroConfig::num_modes();
+    const int num_modes = aero_config.num_modes();
 
     Kokkos::View<int *> isprx("isprx", nlev);
 
     View2DHost scavimptblvol_host("scavimptblvol_host",
                                   mam4::aero_model::nimptblgrow_total,
-                                  mam4::AeroConfig::num_modes());
+                                  aero_config.num_modes());
     View2DHost scavimptblnum_host("scavimptblnum_host",
                                   mam4::aero_model::nimptblgrow_total,
-                                  mam4::AeroConfig::num_modes());
+                                  aero_config.num_modes());
 
-    mam4::wetdep::init_scavimptbl(scavimptblvol_host, scavimptblnum_host);
+    mam4::wetdep::init_scavimptbl(aero_config, scavimptblvol_host,
+                                  scavimptblnum_host);
 
     View2D scavimptblnum("scavimptblnum", mam4::aero_model::nimptblgrow_total,
-                         mam4::AeroConfig::num_modes());
+                         aero_config.num_modes());
     View2D scavimptblvol("scavimptblvol", mam4::aero_model::nimptblgrow_total,
-                         mam4::AeroConfig::num_modes());
+                         aero_config.num_modes());
     Kokkos::deep_copy(scavimptblnum, scavimptblnum_host);
     Kokkos::deep_copy(scavimptblvol, scavimptblvol_host);
 

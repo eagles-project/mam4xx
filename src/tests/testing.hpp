@@ -11,12 +11,56 @@
 #include <mam4xx/surface.hpp>
 
 #include <cfenv>
+#include <cstring>
+
+#define STRLCPY_ON_DEVICE(dst, src, n)                                         \
+  {                                                                            \
+    size_t src_len;                                                            \
+    for (src_len = 0; src_len < n - 1 && src[src_len]; ++src_len)              \
+      dst[src_len] = src[src_len];                                             \
+    dst[src_len] = 0;                                                          \
+  }
+
+// use this macro in place of REQUIRE when testing predicates on device
+#define REQUIRE_ON_DEVICE(results, p)                                          \
+  if (!(p)) {                                                                  \
+    for (int i = 0; i < mam4::testing::max_num_on_device_test_results; ++i) {  \
+      if (!results(i).failed) {                                                \
+        results(i).failed = true;                                              \
+        STRLCPY_ON_DEVICE(results[i].predicate, #p, 1024);                     \
+        STRLCPY_ON_DEVICE(results[i].file, __FILE__, 256);                     \
+        results[i].line_number = __LINE__;                                     \
+        break;                                                                 \
+      }                                                                        \
+    }                                                                          \
+  }
 
 // the testing namespace contains functions that are useful only within tests,
 // not to be used in production code
 namespace mam4::testing {
 
 constexpr int default_fpes = FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW;
+
+// we use a view of TestResult structs to convey on-device test failures to the
+// host for reporting
+struct OnDeviceTestResult {
+  bool failed;
+  char predicate[1024];
+  char file[256];
+  int line_number;
+};
+using OnDeviceTestResultView = mam4::DeviceType::view_1d<OnDeviceTestResult>;
+
+constexpr int max_num_on_device_test_results = 128;
+
+/// creates a view to store on-device test results -- pass this to any lambdas
+/// dispatching tests to device
+OnDeviceTestResultView create_on_device_test_results();
+
+/// reports on-device test results after they have run, returning true if all
+/// on-device tests passed, false otherwise -- pass this to REQUIRE to trigger
+/// a failure resulting from on-device test failures
+bool on_device_tests_passed(const OnDeviceTestResultView results);
 
 /// creates an Atmosphere object that stores a column of data with the given
 /// number of vertical levels and the given planetary boundary height

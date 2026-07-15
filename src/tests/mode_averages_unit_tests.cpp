@@ -28,6 +28,9 @@ TEST_CASE("modal_averages", "") {
   ekat::logger::Logger<> logger("modal averages tests",
                                 ekat::logger::LogLevel::info, comm);
 
+  auto aero_species_h = mam4::default_aero_species();
+  auto aero_species = mam4::aero_species_on_device(aero_species_h);
+
   /// Use EAMxx default number of levels
   const int nlev = 72;
   /// Initialize prognostics with nonzero mass and number
@@ -74,7 +77,7 @@ TEST_CASE("modal_averages", "") {
         const int s = aerosol_index_for_mode(static_cast<mam4::ModeIndex>(m),
                                              static_cast<mam4::AeroId>(aid));
         if (s >= 0) {
-          dry_vol += mass_mixing_ratio / mam4::aero_species(s).density;
+          dry_vol += mass_mixing_ratio / aero_species_h(s).density;
         }
       }
       const Real mean_vol = dry_vol / number_mixing_ratio;
@@ -93,7 +96,7 @@ TEST_CASE("modal_averages", "") {
     /// Call mam4xx kernel across all modes, levels
     Kokkos::parallel_for(
         "compute_dry_particle_size", nlev, KOKKOS_LAMBDA(const int i) {
-          mode_avg_dry_particle_diam(diags, progs, i);
+          mode_avg_dry_particle_diam(aero_species, diags, progs, i);
         });
 
     /// Copy kernel results from device to host and compare
@@ -153,9 +156,9 @@ TEST_CASE("modal_averages", "") {
         const int s = aerosol_index_for_mode(static_cast<mam4::ModeIndex>(m),
                                              static_cast<mam4::AeroId>(aid));
         if (s >= 0) {
-          dry_vol += mass_mixing_ratio / mam4::aero_species(s).density;
-          hyg += mass_mixing_ratio * mam4::aero_species(s).hygroscopicity /
-                 mam4::aero_species(s).density;
+          dry_vol += mass_mixing_ratio / aero_species_h(s).density;
+          hyg += mass_mixing_ratio * aero_species_h(s).hygroscopicity /
+                 aero_species_h(s).density;
         }
       }
       hygro[m] = hyg / dry_vol;
@@ -164,8 +167,9 @@ TEST_CASE("modal_averages", "") {
     }
 
     Kokkos::parallel_for(
-        "compute_hygroscopicity", nlev,
-        KOKKOS_LAMBDA(const int i) { mode_hygroscopicity(diags, progs, i); });
+        "compute_hygroscopicity", nlev, KOKKOS_LAMBDA(const int i) {
+          mode_hygroscopicity(aero_species, diags, progs, i);
+        });
 
     for (int m = 0; m < 4; ++m) {
       auto h_hyg = Kokkos::create_mirror_view(diags.hygroscopicity[m]);
@@ -227,8 +231,8 @@ TEST_CASE("modal_averages", "") {
 
     Kokkos::parallel_for(
         "compute_wet_particle_size", nlev, KOKKOS_LAMBDA(const int i) {
-          mode_avg_dry_particle_diam(diags, progs, i);
-          mode_hygroscopicity(diags, progs, i);
+          mode_avg_dry_particle_diam(aero_species, diags, progs, i);
+          mode_hygroscopicity(aero_species, diags, progs, i);
           mode_avg_wet_particle_diam_water_uptake(diags, atm, i);
         });
 

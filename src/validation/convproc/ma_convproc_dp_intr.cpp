@@ -115,6 +115,10 @@ void set_output(Output &output, const std::string &name, const int rows,
 void ma_convproc_dp_intr(Ensemble *ensemble) {
   // We don't need any settings for this particular test.
   // Settings settings = ensemble->settings();
+
+  auto aero_species =
+      mam4::aero_species_on_device(mam4::default_aero_species());
+
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     const int nlev = 72;
@@ -209,8 +213,8 @@ void ma_convproc_dp_intr(Ensemble *ensemble) {
           auto dqdt_view = Kokkos::View<Real **, Kokkos::MemoryUnmanaged>(
               &dqdt[0][0], nlev, pcnst);
           mam4::convproc::ma_convproc_dp_intr(
-              scratch1Dviews, nlev, temperature, pmid, dpdry, dt, cldfrac,
-              icwmr, rprd, evapc, du, eu, ed, dp, ktop, kbot, qnew_dev,
+              aero_species, scratch1Dviews, nlev, temperature, pmid, dpdry, dt,
+              cldfrac, icwmr, rprd, evapc, du, eu, ed, dp, ktop, kbot, qnew_dev,
               species_class, mmtoo_prevap_resusp, dqdt_view, qsrflx, dotend);
 
           for (int i = 0; i < nlev; ++i) {

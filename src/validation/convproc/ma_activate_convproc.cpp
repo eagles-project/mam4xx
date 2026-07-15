@@ -34,6 +34,10 @@ void set_output(Output &output, const std::string &name, const int size,
 void ma_activate_convproc(Ensemble *ensemble) {
   // We don't need any settings for this particular test.
   // Settings settings = ensemble->settings();
+
+  auto aero_species =
+      mam4::aero_species_on_device(mam4::default_aero_species());
+
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     const int pcnst_extd = mam4::ConvProc::pcnst_extd;
@@ -64,8 +68,9 @@ void ma_activate_convproc(Ensemble *ensemble) {
             conu[i] = conu_dev[i];
           for (int i = 0; i < pcnst_extd; ++i)
             dconudt[i] = dconudt_dev[i];
-          mam4::convproc::ma_activate_convproc(conu, dconudt, f_ent, dt_u, wup,
-                                               tair, rhoair, kk, kactfirst);
+          mam4::convproc::ma_activate_convproc(aero_species, conu, dconudt,
+                                               f_ent, dt_u, wup, tair, rhoair,
+                                               kk, kactfirst);
           for (int i = 0; i < pcnst_extd; ++i)
             conu_dev[i] = conu[i];
           for (int i = 0; i < pcnst_extd; ++i)

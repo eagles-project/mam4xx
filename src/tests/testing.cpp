@@ -12,6 +12,28 @@
 // not to be used in production code
 namespace mam4::testing {
 
+OnDeviceTestResultView create_on_device_test_results() {
+  auto results =
+      OnDeviceTestResultView("Test Results", max_num_on_device_test_results);
+  Kokkos::deep_copy(results, OnDeviceTestResult{});
+  return results;
+}
+
+bool on_device_tests_passed(const OnDeviceTestResultView results) {
+  int num_failures = 0;
+  auto results_h = Kokkos::create_mirror_view(results);
+  Kokkos::deep_copy(results_h, results);
+  for (int i = 0; i < results_h.extent(0); ++i) {
+    const auto &result = results_h(i);
+    if (result.failed) {
+      fprintf(stderr, "On-device test failed: %s (file %s, line %d)\n",
+              result.predicate, result.file, result.line_number);
+      ++num_failures;
+    }
+  }
+  return num_failures == 0;
+}
+
 // A simple memory allocation pool for standalone ColumnViews to be used in
 // (e.g.) unit tests. A ColumnPool manages a number of ColumnViews with a fixed
 // number of vertical levels.

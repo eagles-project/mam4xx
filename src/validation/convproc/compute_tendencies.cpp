@@ -57,6 +57,7 @@ void set_output(Output &output, const std::string &name, const int rows,
 void compute_tendencies(Ensemble *ensemble) {
   // We don't need any settings for this particular test.
   // Settings settings = ensemble->settings();
+
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     const int nlev = 72;

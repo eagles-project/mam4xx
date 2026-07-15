@@ -57,9 +57,9 @@ void calculate_mass_mean_radius(Ensemble *ensemble) {
         input.get_array("total_interstitial_aer_num");
     auto hetraer = input.get_array("hetraer");
 
-    mam4::hetfrz::calculate_mass_mean_radius(bcmac, bcmpc, dmac, dmc,
-                                             total_interstitial_aer_num.data(),
-                                             hetraer.data());
+    mam4::hetfrz::calculate_mass_mean_radius(
+        mam4::default_aero_species(), bcmac, bcmpc, dmac, dmc,
+        total_interstitial_aer_num.data(), hetraer.data());
 
     output.set("hetraer", hetraer);
   });

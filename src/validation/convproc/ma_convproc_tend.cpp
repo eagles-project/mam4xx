@@ -116,6 +116,10 @@ void set_output(Output &output, const std::string &name, const int rows,
 void ma_convproc_tend(Ensemble *ensemble) {
   // We don't need any settings for this particular test.
   // Settings settings = ensemble->settings();
+
+  auto aero_species =
+      mam4::aero_species_on_device(mam4::default_aero_species());
+
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     const int nlev = 72;
@@ -214,10 +218,11 @@ void ma_convproc_tend(Ensemble *ensemble) {
           Real xx_mfup_max, xx_wcldbase;
           int xx_kcldbase;
           mam4::convproc::ma_convproc_tend(
-              scratch1Dviews, nlev, convtype, dt, temperature, pmid, qnew_dev,
-              du, eu, ed, dp, dpdry, ktop, kbot, mmtoo_prevap_resusp, cldfrac,
-              icwmr, rprd, evapc, dqdt_view, doconvproc, qsrflx, species_class,
-              xx_mfup_max, xx_wcldbase, xx_kcldbase);
+              aero_species, scratch1Dviews, nlev, convtype, dt, temperature,
+              pmid, qnew_dev, du, eu, ed, dp, dpdry, ktop, kbot,
+              mmtoo_prevap_resusp, cldfrac, icwmr, rprd, evapc, dqdt_view,
+              doconvproc, qsrflx, species_class, xx_mfup_max, xx_wcldbase,
+              xx_kcldbase);
 
           for (int i = 0; i < nlev; ++i) {
             for (int j = 0; j < pcnst; ++j) {

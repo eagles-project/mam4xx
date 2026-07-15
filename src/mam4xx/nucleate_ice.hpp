@@ -265,6 +265,8 @@ private:
       _nucleate_ice_subgrid;
 
 public:
+  AeroSpeciesView aero_species;
+
   // name--unique name of the process implemented by this class
   const char *name() const { return "MAM4 nucleate_ice"; }
 
@@ -274,6 +276,8 @@ public:
             const Config &nucleate_ice_config = Config()) {
 
     using mam4::log;
+
+    aero_species = aero_config.aero_species;
 
     _nucleate_ice_subgrid = nucleate_ice_config._nucleate_ice_subgrid;
 

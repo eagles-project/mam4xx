@@ -9,6 +9,8 @@
 using namespace skywalker;
 
 void modal_aero_bcscavcoef_init(Ensemble *ensemble) {
+  auto aero_species_h = mam4::default_aero_species();
+
   ensemble->process([=](const Input &input, Output &output) {
     auto dgnum_amode = input.get_array("dgnum_amode");
     auto sigmag_amode = input.get_array("sigmag_amode");
@@ -23,10 +25,10 @@ void modal_aero_bcscavcoef_init(Ensemble *ensemble) {
     Real aerosol_dry_density[mam4::AeroConfig::num_modes()] = {};
     // Note: Original code uses the following aerosol densities.
     // sulfate, sulfate, dust, p-organic
-    aerosol_dry_density[0] = mam4::mam4_density_so4;
-    aerosol_dry_density[1] = mam4::mam4_density_so4;
-    aerosol_dry_density[2] = mam4::mam4_density_dst;
-    aerosol_dry_density[3] = mam4::mam4_density_pom;
+    aerosol_dry_density[0] = aero_species_h(int(mam4::AeroId::SO4)).density;
+    aerosol_dry_density[1] = aero_species_h(int(mam4::AeroId::SO4)).density;
+    aerosol_dry_density[2] = aero_species_h(int(mam4::AeroId::DST)).density;
+    aerosol_dry_density[3] = aero_species_h(int(mam4::AeroId::POM)).density;
 
     mam4::aero_model::modal_aero_bcscavcoef_init(
         dgnum_amode.data(), sigmag_amode.data(), aerosol_dry_density,

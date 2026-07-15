@@ -34,6 +34,10 @@ void set_output(Output &output, const std::string &name, const int size,
 void aer_vol_num_hygro(Ensemble *ensemble) {
   // We don't need any settings for this particular test.
   // Settings settings = ensemble->settings();
+
+  auto aero_species =
+      mam4::aero_species_on_device(mam4::default_aero_species());
+
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     const int num_modes = mam4::AeroConfig::num_modes();
@@ -59,8 +63,8 @@ void aer_vol_num_hygro(Ensemble *ensemble) {
           Real vaerosol[num_modes];
           Real naerosol[num_modes];
           Real hygro[num_modes];
-          mam4::convproc::aer_vol_num_hygro(conu, rhoair, vaerosol, naerosol,
-                                            hygro);
+          mam4::convproc::aer_vol_num_hygro(aero_species, conu, rhoair,
+                                            vaerosol, naerosol, hygro);
           for (int i = 0; i < num_modes; ++i)
             vaerosol_dev[i] = vaerosol[i];
           for (int i = 0; i < num_modes; ++i)
@@ -69,8 +73,8 @@ void aer_vol_num_hygro(Ensemble *ensemble) {
             hygro_dev[i] = hygro[i];
           for (int i = 0; i < mam4::ConvProc::pcnst_extd; ++i)
             conu[i] /= 1.0e21;
-          mam4::convproc::aer_vol_num_hygro(conu, rhoair, vaerosol, naerosol,
-                                            hygro);
+          mam4::convproc::aer_vol_num_hygro(aero_species, conu, rhoair,
+                                            vaerosol, naerosol, hygro);
           for (int i = 0; i < num_modes; ++i)
             hygro_2_dev[i] = hygro[i];
         });

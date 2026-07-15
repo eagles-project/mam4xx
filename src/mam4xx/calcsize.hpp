@@ -925,6 +925,8 @@ public:
     _n_common_species_ait_accum = count;
 
     // Set mode parameters.
+    auto aero_species_h = Kokkos::create_mirror_view(aero_config.aero_species);
+    Kokkos::deep_copy(aero_species_h, aero_config.aero_species);
     for (int m = 0; m < AeroConfig::num_modes(); ++m) {
       // FIXME: There is a comment in modal_aero_newnuc.F90 that Dick Easter
       // FIXME: thinks that dgnum_aer isn't used in MAM4, but it is actually
@@ -948,7 +950,7 @@ public:
       const auto n_spec = num_species_mode(m);
       for (int ispec = 0; ispec < n_spec; ispec++) {
         const int aero_id = int(mode_aero_species(m, ispec));
-        _inv_density[m][ispec] = Real(1.0) / aero_species(aero_id).density;
+        _inv_density[m][ispec] = Real(1.0) / aero_species_h(aero_id).density;
       } // for(ispec)
       // FIXME: do we need to update num2vol_ratio_min_nmodes and
       // num2vol_ratio_max_nmodes as well?
