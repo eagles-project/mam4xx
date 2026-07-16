@@ -43,10 +43,10 @@ void mode_hygroscopicity_i(const AeroSpeciesView &aero_species,
     const int s = aerosol_index_for_mode(static_cast<ModeIndex>(mode_idx),
                                          static_cast<AeroId>(aid));
     if (s >= 0) {
+      const AeroSpecies &species = aero_species(aid);
       const Real mass_mix_ratio = progs.q_aero_i[mode_idx][s](k);
-      volume_mixing_ratio += mass_mix_ratio / aero_species(s).density;
-      hyg += mass_mix_ratio * aero_species(s).hygroscopicity /
-             aero_species(s).density;
+      volume_mixing_ratio += mass_mix_ratio / species.density;
+      hyg += mass_mix_ratio * species.hygroscopicity / species.density;
     }
   }
   diags.hygroscopicity[mode_idx](k) = hyg / volume_mixing_ratio;
