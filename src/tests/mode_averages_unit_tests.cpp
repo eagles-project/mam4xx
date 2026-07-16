@@ -77,7 +77,7 @@ TEST_CASE("modal_averages", "") {
         const int s = aerosol_index_for_mode(static_cast<mam4::ModeIndex>(m),
                                              static_cast<mam4::AeroId>(aid));
         if (s >= 0) {
-          dry_vol += mass_mixing_ratio / aero_species_h(s).density;
+          dry_vol += mass_mixing_ratio / aero_species_h(aid).density;
         }
       }
       const Real mean_vol = dry_vol / number_mixing_ratio;
@@ -156,9 +156,9 @@ TEST_CASE("modal_averages", "") {
         const int s = aerosol_index_for_mode(static_cast<mam4::ModeIndex>(m),
                                              static_cast<mam4::AeroId>(aid));
         if (s >= 0) {
-          dry_vol += mass_mixing_ratio / aero_species_h(s).density;
-          hyg += mass_mixing_ratio * aero_species_h(s).hygroscopicity /
-                 aero_species_h(s).density;
+          const mam4::AeroSpecies &species = aero_species_h(aid);
+          dry_vol += mass_mixing_ratio / species.density;
+          hyg += mass_mixing_ratio * species.hygroscopicity / species.density;
         }
       }
       hygro[m] = hyg / dry_vol;

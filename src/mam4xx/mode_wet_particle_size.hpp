@@ -234,9 +234,12 @@ void diag_dgn_wet(
     Real tmp_dryvol = 0.0;
     // Sum up the volume of all species in this mode
     for (int iaer = 0; iaer < num_aer; ++iaer) {
-      const Real weight_gm_per_mol = molecular_weight_gm[iaer];
-      const Real tmpa = qaer_cur[iaer][n] * weight_gm_per_mol;
-      tmp_dryvol += tmpa / aero_config.aero_species(iaer).density;
+      const AeroId aid = mode_aero_species(n, iaer);
+      if (aid != AeroId::None) {
+        const Real weight_gm_per_mol = molecular_weight_gm[iaer];
+        const Real tmpa = qaer_cur[iaer][n] * weight_gm_per_mol;
+        tmp_dryvol += tmpa / aero_config.aero_species(int(aid)).density;
+      }
     }
     // Convert dry volume to dry diameter, then to wet diameter
     const Real sx = std::log(mam4::modes(n).mean_std_dev);
