@@ -28,7 +28,6 @@ void seasalt_emis(Ensemble *ensemble) {
 
     const auto fi_ = input.get_array("fi");
     const Real ocean_frac = input.get_array("ocnfrc")[0];
-    const Real emis_scalefactor = input.get_array("emis_scale")[0];
 
     constexpr int pcnst = mam4::pcnst;
     Real cflux[pcnst] = {0.0};
@@ -40,8 +39,8 @@ void seasalt_emis(Ensemble *ensemble) {
 
     mam4::aero_model_emissions::SeasaltEmissionsData data;
     mam4::aero_model_emissions::init_seasalt(data);
-    mam4::aero_model_emissions::seasalt_emis(fi, ocean_frac, emis_scalefactor,
-                                             data, cflux);
+    data.seasalt_emis_scale_factor = input.get_array("emis_scale")[0];
+    mam4::aero_model_emissions::seasalt_emis(fi, ocean_frac, data, cflux);
 
     std::vector<Real> cflux_out;
     // NOTE: the only entries that are changed are (c++ indexing):
