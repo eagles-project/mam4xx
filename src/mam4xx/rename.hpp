@@ -673,18 +673,20 @@ public:
           rename_idx = _mam4xx2rename_idx[imode][jspec];
 
           const AeroId aero_id = mode_aero_species(imode, jspec);
-          const Real molecular_weight =
-              aero_species(int(aero_id)).molecular_weight;
+          if (aero_id != AeroId::None) {
+            const Real molecular_weight =
+                aero_species(int(aero_id)).molecular_weight;
 
-          // convert mass mixing ratios to molar mixing ratios
-          qmol_i_cur[imode][rename_idx] = conversions::vmr_from_mmr(
-              prognostics.q_aero_i[imode][rename_idx](kk), molecular_weight);
-          qmol_i_del[imode][rename_idx] = conversions::vmr_from_mmr(
-              tendencies.q_aero_i[imode][rename_idx](kk), molecular_weight);
-          qmol_c_cur[imode][rename_idx] = conversions::vmr_from_mmr(
-              prognostics.q_aero_c[imode][rename_idx](kk), molecular_weight);
-          qmol_c_del[imode][rename_idx] = conversions::vmr_from_mmr(
-              tendencies.q_aero_c[imode][rename_idx](kk), molecular_weight);
+            // convert mass mixing ratios to molar mixing ratios
+            qmol_i_cur[imode][rename_idx] = conversions::vmr_from_mmr(
+                prognostics.q_aero_i[imode][rename_idx](kk), molecular_weight);
+            qmol_i_del[imode][rename_idx] = conversions::vmr_from_mmr(
+                tendencies.q_aero_i[imode][rename_idx](kk), molecular_weight);
+            qmol_c_cur[imode][rename_idx] = conversions::vmr_from_mmr(
+                prognostics.q_aero_c[imode][rename_idx](kk), molecular_weight);
+            qmol_c_del[imode][rename_idx] = conversions::vmr_from_mmr(
+                tendencies.q_aero_c[imode][rename_idx](kk), molecular_weight);
+          }
         }
       }
 
