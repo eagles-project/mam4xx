@@ -511,8 +511,7 @@ KOKKOS_INLINE_FUNCTION
 void seasalt_emis_flux_calc(
     // in
     const Real (&fi)[salt_nsection], const Real &ocean_frac,
-    const FluxType &flux_type,
-    const SeasaltEmissionsData &data,
+    const FluxType &flux_type, const SeasaltEmissionsData &data,
     // inout
     Real (&cflux)[pcnst]) {
 
@@ -820,9 +819,9 @@ void calc_marine_organic_massflux(
           if ((data.Dg(ibin) >= data.seasalt_size_range_lo(idx_salt_offset)) &&
               (data.Dg(ibin) < data.seasalt_size_range_hi(idx_salt_offset))) {
             // should use dry size, convert from number to mass flux (kg/m2/s)
-            cflux_tmp = fi[ibin] * ocean_frac * data.seasalt_emis_scale_factor * (4.0 / 3.0) *
-                        Constants::pi * mam4::pow(data.rdry[ibin], 3) *
-                        seasalt_density;
+            cflux_tmp = fi[ibin] * ocean_frac * data.seasalt_emis_scale_factor *
+                        (4.0 / 3.0) * Constants::pi *
+                        mam4::pow(data.rdry[ibin], 3) * seasalt_density;
             // Mixing state 3: internal mixture, add OM to mass and number
             // and avoid division by zero
             if (om_seasalt[ibin] > 0.0) {
@@ -906,8 +905,7 @@ void marine_organic_emissions(
       cflux);
   calc_marine_organic_massflux(
       // in
-      fi, ocean_frac, om_seasalt, mass_frac_bub_section,
-      emit_this_mode, data,
+      fi, ocean_frac, om_seasalt, mass_frac_bub_section, emit_this_mode, data,
       // inout
       cflux);
 } // end marine_organic_emissions()
