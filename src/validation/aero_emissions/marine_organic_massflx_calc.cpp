@@ -42,7 +42,6 @@ void marine_organic_massflx_calc(Ensemble *ensemble) {
 
     const auto fi_ = input.get_array("fi");
     const Real ocean_frac = input.get_array("ocnfrc")[0];
-    const Real emis_scalefactor = input.get_array("emis_scale")[0];
     const auto om_seasalt_ = input.get_array("om_ssa");
     const auto mass_frac_bub_section_ =
         input.get_array("mass_frac_bub_section");
@@ -74,9 +73,10 @@ void marine_organic_massflx_calc(Ensemble *ensemble) {
 
     mam4::aero_model_emissions::SeasaltEmissionsData data;
     mam4::aero_model_emissions::init_seasalt(data);
+    data.seasalt_emis_scale_factor = input.get_array("emis_scale")[0];
     mam4::aero_model_emissions::calc_marine_organic_massflux(
-        fi, ocean_frac, emis_scalefactor, om_seasalt, mass_frac_bub_section,
-        emit_this_mode, data, cflux);
+        fi, ocean_frac, om_seasalt, mass_frac_bub_section, emit_this_mode, data,
+        cflux);
 
     std::vector<Real> cflux_out;
 

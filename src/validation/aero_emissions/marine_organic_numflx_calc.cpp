@@ -40,7 +40,6 @@ void marine_organic_numflx_calc(Ensemble *ensemble) {
 
     const auto fi_ = input.get_array("fi");
     const Real ocean_frac = input.get_array("ocnfrc")[0];
-    const Real emis_scalefactor = input.get_array("emis_scale")[0];
     const auto om_seasalt_ = input.get_array("om_ssa");
     const auto emit_this_mode_ = input.get_array("emit_this_mode");
     const auto cflux_ = input.get_array("cflx");
@@ -66,9 +65,9 @@ void marine_organic_numflx_calc(Ensemble *ensemble) {
 
     mam4::aero_model_emissions::SeasaltEmissionsData data;
     mam4::aero_model_emissions::init_seasalt(data);
+    data.seasalt_emis_scale_factor = input.get_array("emis_scale")[0];
     mam4::aero_model_emissions::calc_marine_organic_numflux(
-        fi, ocean_frac, emis_scalefactor, om_seasalt, emit_this_mode, data,
-        cflux);
+        fi, ocean_frac, om_seasalt, emit_this_mode, data, cflux);
 
     std::vector<Real> cflux_out;
     for (int i = 0; i < pcnst; ++i) {

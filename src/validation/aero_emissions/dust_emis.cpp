@@ -51,6 +51,7 @@ void dust_emis(Ensemble *ensemble) {
     for (int i = 0; i < dust_nbin; ++i) {
       data.dust_dmt_vwr[i] = dust_dmt_vwr_[i];
     }
+    data.dust_emis_scale_factor = 1.5;
 
     mam4::aero_model_emissions::dust_emis(dust_density, dust_flux_in, data,
                                           soil_erodibility, cflux);

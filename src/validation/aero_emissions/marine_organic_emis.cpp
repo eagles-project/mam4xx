@@ -29,7 +29,6 @@ void marine_organic_emis(Ensemble *ensemble) {
 
     const auto fi_ = input.get_array("fi");
     const auto ocean_frac = input.get_array("ocnfrc")[0];
-    const auto emis_scalefactor = input.get_array("emis_scale")[0];
     const auto emit_this_mode_ = input.get_array("emit_this_mode");
     const auto cflux_ = input.get_array("cflx");
 
@@ -53,9 +52,10 @@ void marine_organic_emis(Ensemble *ensemble) {
     data.mpoly = input.get_array("mpoly")[0];
     data.mprot = input.get_array("mprot")[0];
     data.mlip = input.get_array("mlip")[0];
+    data.seasalt_emis_scale_factor = input.get_array("emis_scale")[0];
 
-    mam4::aero_model_emissions::marine_organic_emissions(
-        fi, ocean_frac, emis_scalefactor, data, emit_this_mode, cflux);
+    mam4::aero_model_emissions::marine_organic_emissions(fi, ocean_frac, data,
+                                                         emit_this_mode, cflux);
 
     std::vector<Real> cflux_out;
     for (int i = 0; i < pcnst; ++i) {
