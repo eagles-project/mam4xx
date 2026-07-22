@@ -1228,7 +1228,7 @@ void update_from_explmix(
 
         eddy_diff_kp(k) = zn(k) * eddy_diff(k) * csbot(k) * zs(k);
         // NOTE: eddy_diff_k uses k-1 while sz uses km1.
-        eddy_diff_km(k) = zn(k) * eddy_diff(k - 1) * csbot(k - 1) * zs(km1);
+        eddy_diff_km(k) = zn(k) * eddy_diff(km1) * csbot(km1) * zs(km1);
         const Real tinv = eddy_diff_kp(k) + eddy_diff_km(k);
 
         // rce-comment
