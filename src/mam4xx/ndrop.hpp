@@ -1159,7 +1159,7 @@ Real explmix(const Real qold_km1, // number / mass mixing ratio from previous
 } // end explmix
 
 KOKKOS_INLINE_FUNCTION
-void aero_vertical_mix(
+void apply_aero_vertical_mixing(
     const ThreadTeam &team, const Real dtmin,
     const Real dtmicro, // time step for microphysics [s]
     const ColumnView
@@ -1395,11 +1395,12 @@ void update_from_explmix(
   team.team_barrier();
 
   if (enable_aero_vertical_mix)
-    aero_vertical_mix(team, dtmin, dtmicro, csbot, cldn, zn, zs, eddy_diff,
-                      nact, mact, qcld, raercol, raercol_cw, nsav, nnew,
-                      nspec_amode, mam_idx, enable_aero_vertical_mix, top_lev,
-                      // work vars
-                      overlapp, overlapm, eddy_diff_kp, eddy_diff_km, qncld);
+    apply_aero_vertical_mixing(
+        team, dtmin, dtmicro, csbot, cldn, zn, zs, eddy_diff, nact, mact, qcld,
+        raercol, raercol_cw, nsav, nnew, nspec_amode, mam_idx,
+        enable_aero_vertical_mix, top_lev,
+        // work vars
+        overlapp, overlapm, eddy_diff_kp, eddy_diff_km, qncld);
 
   // evaporate particles again if no cloud
   Kokkos::parallel_for(
