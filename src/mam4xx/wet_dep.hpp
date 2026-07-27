@@ -2083,9 +2083,9 @@ void aero_model_wetdep(
 
       mam4::water_uptake::modal_aero_water_uptake_dr(
           // inputs
-          calcsizedata.nspec_amode, calcsizedata.specdens_amode,
-          calcsizedata.spechygro, calcsizedata.lspectype_amode,
-          state_q_kk.data(), temperature(kk), pmid(kk), cldt(kk), dgnumdry_m_kk,
+          AeroConfig::nspec_amode, AeroConfig::specdens_amode,
+          AeroConfig::spechygro, AeroConfig::lspectype_amode, state_q_kk.data(),
+          temperature(kk), pmid(kk), cldt(kk), dgnumdry_m_kk,
           // outputs
           dgnumwet_m_kk, qaerwat_m_kk, wetdens_kk);
     }

@@ -72,19 +72,6 @@ void get_activate_frac(Ensemble *ensemble) {
           // aten from validation data only for testing proposes.
           Real aten_testing = 0.1206437615E-08;
 
-          int nspec_amode[ntot_amode];
-          int lspectype_amode[maxd_aspectype][ntot_amode];
-          int lmassptr_amode[maxd_aspectype][ntot_amode];
-          Real specdens_amode[maxd_aspectype];
-          Real spechygro[maxd_aspectype];
-          int numptr_amode[ntot_amode];
-          int mam_idx[ntot_amode][nspec_max];
-          int mam_cnst_idx[ntot_amode][nspec_max];
-
-          mam4::ndrop::get_e3sm_parameters(
-              nspec_amode, lspectype_amode, lmassptr_amode, numptr_amode,
-              specdens_amode, spechygro, mam_idx, mam_cnst_idx);
-
           Real exp45logsig[mam4::AeroConfig::num_modes()],
               alogsig[mam4::AeroConfig::num_modes()],
               num2vol_ratio_min_nmodes[mam4::AeroConfig::num_modes()],
@@ -106,10 +93,13 @@ void get_activate_frac(Ensemble *ensemble) {
           mam4::ndrop::get_activate_frac(
               state_q_k.data(), air_density, air_density, wsub(kk),
               tair(kk), // in
-              lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
-              num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes, numptr_amode,
-              nspec_amode, exp45logsig, alogsig, aten_testing, fn_k.data(),
-              fm_k.data(), fluxn_k.data(), fluxm_k.data(), flux_fullact(kk));
+              mam4::AeroConfig::lspectype_amode,
+              mam4::AeroConfig::specdens_amode, mam4::AeroConfig::spechygro,
+              mam4::AeroConfig::lmassptr_amode, num2vol_ratio_min_nmodes,
+              num2vol_ratio_max_nmodes, mam4::AeroConfig::numptr_amode,
+              mam4::AeroConfig::nspec_amode, exp45logsig, alogsig, aten_testing,
+              fn_k.data(), fm_k.data(), fluxn_k.data(), fluxm_k.data(),
+              flux_fullact(kk));
         });
 
     auto fn_host = Kokkos::create_mirror_view(fn);

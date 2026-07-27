@@ -160,26 +160,13 @@ inline void set_device_specrefindex(
   ComplexView2D::host_mirror_type specrefindex_host(view_name, max_nspec,
                                                     nbands);
 
-  int nspec_amode[ntot_amode];
-  int lspectype_amode[ndrop::maxd_aspectype][ntot_amode];
-  int lmassptr_amode[ndrop::maxd_aspectype][ntot_amode];
-  Real specdens_amode[ndrop::maxd_aspectype];
-  Real spechygro[ndrop::maxd_aspectype];
-  int numptr_amode[ntot_amode];
-  int mam_idx[ntot_amode][ndrop::nspec_max];
-  int mam_cnst_idx[ntot_amode][ndrop::nspec_max];
-
-  ndrop::get_e3sm_parameters(nspec_amode, lspectype_amode, lmassptr_amode,
-                             numptr_amode, specdens_amode, spechygro, mam_idx,
-                             mam_cnst_idx);
-
   for (int mm = 0; mm < ntot_amode; ++mm) {
-    const int nspec = nspec_amode[mm];
+    const int nspec = AeroConfig::nspec_amode[mm];
     for (int ibands = 0; ibands < nbands; ++ibands) {
       // // Fortran to C++ indexing
       for (int ll = 0; ll < nspec; ++ll) {
         specrefindex_host(ll, ibands) =
-            specrefndx_host(ibands, lspectype_amode[ll][mm] - 1);
+            specrefndx_host(ibands, AeroConfig::lspectype_amode[ll][mm] - 1);
       } // ll
     }   // ibands
     Kokkos::deep_copy(specrefindex[mm], specrefindex_host);
@@ -527,8 +514,8 @@ KOKKOS_INLINE_FUNCTION void compute_calcsize_and_water_uptake_dr(
                                                dgncur_c_kk, ptend, dqqcwdt);
 
   mam4::water_uptake::modal_aero_water_uptake_dr(
-      calcsizedata.nspec_amode, calcsizedata.specdens_amode,
-      calcsizedata.spechygro, calcsizedata.lspectype_amode, state_q_kk,
+      AeroConfig::nspec_amode, AeroConfig::specdens_amode,
+      AeroConfig::spechygro, AeroConfig::lspectype_amode, state_q_kk,
       temperature, pmid, cldn, dgnumdry_m_kk, dgnumwet_m_kk, qaerwat_m_kk);
 } // compute_calcsize_water_uptake_dr
 
@@ -613,7 +600,7 @@ KOKKOS_INLINE_FUNCTION void modal_aero_sw_wo_diagnostics_k(
 
   for (int mm = 0; mm < ntot_amode; ++mm) {
     //  get mode info
-    const int nspec = calcsizedata.nspec_amode[mm];
+    const int nspec = AeroConfig::nspec_amode[mm];
     // const Real sigma_logr_aer = sigmag_amode[mm];
     // CHECK if mean_std_dev_nmodes is equivalent to sigmag_amode
     const Real sigma_logr_aer = calcsizedata.mean_std_dev_nmodes[mm];
@@ -629,12 +616,11 @@ KOKKOS_INLINE_FUNCTION void modal_aero_sw_wo_diagnostics_k(
 
         // get aerosol properties and save for each species
         // Fortran to C++ indexing
-        auto specmmr = state_q_kk[calcsizedata.lmassptr_amode[ll][mm] - 1];
+        auto specmmr = state_q_kk[AeroConfig::lmassptr_amode[ll][mm] - 1];
         // FIXME: move specdens to init
         //  Fortran to C++ indexing
         const Real specdens =
-            calcsizedata
-                .specdens_amode[calcsizedata.lspectype_amode[ll][mm] - 1];
+            AeroConfig::specdens_amode[AeroConfig::lspectype_amode[ll][mm] - 1];
 
         // allocate(specvol(pcols,nspec),stat=istat)
         specvol[ll] = specmmr / specdens;
@@ -908,7 +894,7 @@ KOKKOS_INLINE_FUNCTION void modal_aero_lw_k(
   for (int mm = 0; mm < ntot_amode; ++mm) {
 
     // get mode info
-    const int nspec = calcsizedata.nspec_amode[mm];
+    const int nspec = AeroConfig::nspec_amode[mm];
     // const Real sigma_logr_aer = sigmag_amode[mm];
     // CHECK if mean_std_dev_nmodes is equivalent to sigmag_amode
     const Real sigma_logr_aer = calcsizedata.mean_std_dev_nmodes[mm];
@@ -925,12 +911,11 @@ KOKKOS_INLINE_FUNCTION void modal_aero_lw_k(
 
       for (int ll = 0; ll < nspec; ++ll) {
         // Fortran to C++ indexing
-        auto specmmr = state_q_kk[calcsizedata.lmassptr_amode[ll][mm] - 1];
+        auto specmmr = state_q_kk[AeroConfig::lmassptr_amode[ll][mm] - 1];
         // FIXME: move specdens to int
         //  Fortran to C++ indexing
         const Real specdens =
-            calcsizedata
-                .specdens_amode[calcsizedata.lspectype_amode[ll][mm] - 1];
+            AeroConfig::specdens_amode[AeroConfig::lspectype_amode[ll][mm] - 1];
 
         specvol[ll] = specmmr / specdens;
       } // ll

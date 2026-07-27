@@ -30,19 +30,11 @@ void modal_aero_water_uptake_dr(Ensemble *ensemble) {
     auto dgncur_awet = input.get_array("dgncur_awet");
     auto qaerwat = input.get_array("qaerwat");
 
-    int nspec_amode[mam4::AeroConfig::num_modes()];
-    int lspectype_amode[mam4::water_uptake::maxd_aspectype]
-                       [mam4::AeroConfig::num_modes()];
-    Real specdens_amode[mam4::water_uptake::maxd_aspectype];
-    Real spechygro[mam4::water_uptake::maxd_aspectype];
-
-    mam4::water_uptake::get_e3sm_parameters(nspec_amode, lspectype_amode,
-                                            specdens_amode, spechygro);
-
     mam4::water_uptake::modal_aero_water_uptake_dr(
-        nspec_amode, specdens_amode, spechygro, lspectype_amode, state_q.data(),
-        temperature, pmid, cldn, dgncur_a.data(), dgncur_awet.data(),
-        qaerwat.data());
+        mam4::AeroConfig::nspec_amode, mam4::AeroConfig::specdens_amode,
+        mam4::AeroConfig::spechygro, mam4::AeroConfig::lspectype_amode,
+        state_q.data(), temperature, pmid, cldn, dgncur_a.data(),
+        dgncur_awet.data(), qaerwat.data());
 
     output.set("dgncur_awet", dgncur_awet);
     output.set("qaerwat", qaerwat);
