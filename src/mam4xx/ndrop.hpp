@@ -1347,11 +1347,11 @@ void update_from_explmix(
                 source = mam4::max(zero, tmpa);
               }
               // update aerosol species mass
-              raercol_cw_k_nnew(mm) =
-                  explmix(raercol_cw_km1_nsav(mm), raercol_cw_k_nsav(mm),
-                          raercol_cw_kp1_nsav(mm), source, eddy_diff_kp(k),
-                          eddy_diff_km(k), overlapp(k), overlapm(k), dtmix);
               if (enable_aero_vertical_mix) {
+                raercol_cw_k_nnew(mm) =
+                    explmix(raercol_cw_km1_nsav(mm), raercol_cw_k_nsav(mm),
+                            raercol_cw_kp1_nsav(mm), source, eddy_diff_kp(k),
+                            eddy_diff_km(k), overlapp(k), overlapm(k), dtmix);
                 raercol_k_nnew(mm) =
                     explmix(raercol_km1_nsav(mm), raercol_k_nsav(mm),
                             raercol_kp1_nsav(mm), source, eddy_diff_kp(k),
