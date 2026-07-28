@@ -236,7 +236,7 @@ KOKKOS_INLINE_FUNCTION void
 imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
         const Real reaction_rates[rxntot], const Real het_rates[gas_pcnst],
         const Real extfrc[extcnt], const Real &delt, const bool factor[itermax],
-        Real epsilon[clscnt4], Real prod_out[clscnt4], Real loss_out[clscnt4],int &fail_cnt)) {
+        Real epsilon[clscnt4], Real prod_out[clscnt4], Real loss_out[clscnt4],int &fail_cnt) {
 
   constexpr auto clsmap_4 = gas_chemistry::clsmap_4;
   constexpr auto permute_4 = gas_chemistry::permute_4;
