@@ -48,6 +48,12 @@ KOKKOS_INLINE_FUNCTION void gas_phase_chemistry(
   // ... set rates for "tabular" and user specified reactions
   //=====================================================================
   Real reaction_rates[rxntot];
+  // copy photolysis rates into reaction_rates (assumes photolysis rates come
+  // first)
+  for (int i = 0; i < phtcnt; ++i) {
+    reaction_rates[i] = photo_rates[i];
+  }
+
   mam4::gas_chemistry::setrxt(reaction_rates, // out
                               temp);          // in
 
