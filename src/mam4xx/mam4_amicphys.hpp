@@ -1127,7 +1127,7 @@ void mam_newnuc_1subarea(
 KOKKOS_INLINE_FUNCTION
 void mam_amicphys_1subarea(
     // in
-    const AeroSpeciesView &aero_species, const int newnuc_h2so4_conc_optaa,
+    const AeroConfig &aero_config, const int newnuc_h2so4_conc_optaa,
     const int gaexch_h2so4_uptake_optaa, const bool do_cond_sub,
     const bool do_rename_sub, const bool do_newnuc_sub, const bool do_coag_sub,
     const Real deltat, const int jsubarea, const bool iscldy_subarea,
@@ -1509,18 +1509,21 @@ void mam_amicphys_1subarea(
           qaercw_delsub_grow4rnam_tmp[im][is] = qaercw_delsub_grow4rnam[is][im];
         }
       }
+
       // BAD CONSTANT
-      constexpr Real mass_2_vol[num_aerosol_ids] = {0.15,
-                                                    6.4971751412429377e-002,
-                                                    0.15,
-                                                    7.0588235294117650e-003,
-                                                    3.0789473684210526e-002,
-                                                    5.1923076923076926e-002,
-                                                    156.20986883198000};
+      AeroSpeciesData<Real> mass_2_vol("mass-to-volume conversion factors");
+      mass_2_vol[AeroId::SOA] = 0.15;
+      mass_2_vol[AeroId::SO4] = 6.4971751412429377e-002;
+      mass_2_vol[AeroId::POM] = 0.15;
+      mass_2_vol[AeroId::BC] = 7.0588235294117650e-003;
+      mass_2_vol[AeroId::NaCl] = 3.0789473684210526e-002;
+      mass_2_vol[AeroId::DST] = 5.1923076923076926e-002;
+      mass_2_vol[AeroId::MOM] = 156.20986883198000;
 
       Rename rename;
       rename.mam_rename_1subarea_(
-          iscldy_subarea, smallest_dryvol_value, dest_mode_of_mode,   // in
+          aero_config, iscldy_subarea, smallest_dryvol_value,
+          dest_mode_of_mode,                                          // in
           mean_std_dev, fmode_dist_tail_fac, v2n_lo_rlx, v2n_hi_rlx,  // in
           ln_diameter_tail_fac, num_pairs, diameter_cutoff,           // in
           ln_dia_cutoff, diameter_threshold, mass_2_vol, dgnum_amode, // in
@@ -1667,11 +1670,11 @@ void mam_amicphys_1subarea(
 
     if (do_aging_in_subarea) {
       mam4::aging::mam_pcarbon_aging_1subarea(
-          aero_species, n_so4_monolayers_pcage, dgn_a,  // input
-          qnum_cur, qnum_delsub_cond, qnum_delsub_coag, // in-outs
-          qaer_cur, qaer_delsub_cond, qaer_delsub_coag, // in-outs
-          qaer_delsub_coag_in);                         // in-outs
-    }                                                   // do_aging_in_subarea
+          aero_config.aero_species, n_so4_monolayers_pcage, dgn_a, // input
+          qnum_cur, qnum_delsub_cond, qnum_delsub_coag,            // in-outs
+          qaer_cur, qaer_delsub_cond, qaer_delsub_coag,            // in-outs
+          qaer_delsub_coag_in);                                    // in-outs
+    } // do_aging_in_subarea
 
     // The following block has to be placed here (after both condensation and
     // aging) as both can change the values of qnum_delsub_cond and

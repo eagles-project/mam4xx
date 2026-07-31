@@ -10,9 +10,10 @@ using namespace skywalker;
 
 void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
+    mam4::AeroConfig aero_config;
     constexpr int pcnst = mam4::aero_model::pcnst;
     constexpr int pver = mam4::ndrop::pver;
-    constexpr int ntot_amode = mam4::AeroConfig::num_modes();
+    constexpr int ntot_amode = aero_config.num_modes();
 
     using View2D = mam4::DeviceType::view_2d<Real>;
     constexpr Real zero = 0.0;
@@ -67,7 +68,7 @@ void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
         mam4::validation::get_input_in_columnview(input, "cldn");
 
     mam4::modal_aero_calcsize::CalcsizeData cal_data;
-    cal_data.initialize();
+    cal_data.initialize(aero_config);
     const bool update_mmr = true;
     cal_data.set_update_mmr(update_mmr);
 

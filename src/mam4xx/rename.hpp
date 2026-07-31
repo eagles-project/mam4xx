@@ -19,21 +19,39 @@ namespace mam4 {
 
 namespace rename {
 
+/// This function converts a mass-mixing ratio (mmr, [kg aerosol/kg air]) for
+/// the given species to an aerosol specific volume [aerosol m^3/kg air]
+KOKKOS_INLINE_FUNCTION
+double specific_volume_from_mmr(const AeroSpecies &species, double mmr) {
+  const Real molecular_weight =
+      1000.0 * species.molecular_weight; // kg/mol -> kg/kmol
+  return mmr * molecular_weight / species.density;
+}
+
+/// This function converts a volume-mixing ratio (vmr) for the given species to
+/// a mass-mixing ratio (mmr)
+KOKKOS_INLINE_FUNCTION
+double mmr_from_specific_volume(const AeroSpecies &species,
+                                double specific_volume) {
+  const Real molecular_weight =
+      1000.0 * species.molecular_weight; // kg/mol -> kg/kmol
+  return specific_volume * species.density / molecular_weight;
+}
+
 KOKKOS_INLINE_FUNCTION
 void compute_dryvol_change_in_src_mode(
-    const int nmode,              // in
-    const int nspec,              // in
-    const int *dest_mode_of_mode, // in
+    const AeroConfig &aero_config, // in
+    const int *dest_mode_of_mode,  // in
     const Real q_mmr[AeroConfig::num_modes()]
                     [AeroConfig::num_aerosol_ids()], // in
     const Real q_del_growth[AeroConfig::num_modes()]
                            [AeroConfig::num_aerosol_ids()], // in
-    const Real mass_2_vol[AeroConfig::num_aerosol_ids()],   // in
+    const AeroSpeciesData<Real> mass_2_vol,                 // in
     Real dryvol[AeroConfig::num_modes()],
     Real deldryvol[AeroConfig::num_modes()] // out
 ) {
   const Real zero = 0;
-  for (int m = 0; m < nmode; ++m) {
+  for (int m = 0; m < aero_config.num_modes(); ++m) {
     int dest_mode = dest_mode_of_mode[m];
 
     if (dest_mode >= 0) {
@@ -52,13 +70,13 @@ void compute_dryvol_change_in_src_mode(
       // [(g/mol-species) / (kg-species/m3)]; where molecular_weight has units
       // [g/mol-species] and density units are [kg-species/m3] which results in
       // the units of m3/kmol-species
-
-      for (int ispec = 0; ispec < nspec; ++ispec) {
+      for (AeroId aid : all_aerosol_ids()) {
+        int ispec = aerosol_index_for_mode(ModeIndex(m), aid);
         // Multiply by mass_2_vol [m3/kmol-species] to convert
         // q_mmr [kmol-species/kmol-air] to volume units [m3/kmol-air]
-        tmp_dryvol += q_mmr[m][ispec] * mass_2_vol[ispec];
+        tmp_dryvol += q_mmr[m][ispec] * mass_2_vol[aid];
         // accumulate the "growth" in volume units as well
-        tmp_del_dryvol += q_del_growth[m][ispec] * mass_2_vol[ispec];
+        tmp_del_dryvol += q_del_growth[m][ispec] * mass_2_vol[aid];
       }
 
       // This is dry volume before the growth
@@ -534,8 +552,8 @@ private:
       // is the amount of a given species. This factor is obtained by
       // (molecular_weight/density) of a species. That is, [ (g/mol-species) /
       // (kg-species/m3)].
-      _mass_2_vol[AeroConfig::num_aerosol_ids()],
       _dgnum_amode[AeroConfig::num_modes()];
+  AeroSpeciesData<Real> _mass_2_vol;
 
 public:
   // name--unique name of the process implemented by this class
@@ -554,8 +572,7 @@ public:
                                 _num_pairs,                 // out
                                 _diameter_cutoff,           // out
                                 _ln_dia_cutoff, _diameter_threshold);
-    auto aero_species_h = Kokkos::create_mirror_view(aero_config.aero_species);
-    Kokkos::deep_copy(aero_species_h, aero_config.aero_species);
+    auto aero_species_h = aero_species_on_host(aero_config.aero_species);
 
     for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
       _dgnum_amode[imode] = modes(imode).nom_diameter;
@@ -580,21 +597,20 @@ public:
     // than the ones from aero_modes.hpp this uses the aero_modes.hpp values
     const Real unit_factor = 1000; // from kg/mol to kg/kmol
 
-    for (int aid = 0; aid < AeroConfig::num_aerosol_ids(); ++aid) {
-      _mass_2_vol[aid] = aero_species_h(aid).molecular_weight /
-                         aero_species_h(aid).density * unit_factor;
+    _mass_2_vol =
+        AeroSpeciesData<Real>("Aerosol mass-to-volume conversion factors");
+    for (AeroId aid : all_aerosol_ids()) {
+      _mass_2_vol[aid] = aero_species_h[aid].molecular_weight /
+                         aero_species_h[aid].density * unit_factor;
     }
-    // Correction because of differences in MWs between mam4xx and mam4
-    int soa_idx = int(AeroId::SOA);
-    int so4_idx = int(AeroId::SO4);
-    int pom_idx = int(AeroId::POM);
 
-    _mass_2_vol[soa_idx] =
-        config_._molecular_weight_soa / aero_species_h(soa_idx).density;
-    _mass_2_vol[so4_idx] =
-        config_._molecular_weight_so4 / aero_species_h(so4_idx).density;
-    _mass_2_vol[pom_idx] =
-        config_._molecular_weight_pom / aero_species_h(pom_idx).density;
+    // Corrections because of differences in MWs between mam4xx and mam4
+    _mass_2_vol[AeroId::SOA] =
+        config_._molecular_weight_soa / aero_species_h[AeroId::SO4].density;
+    _mass_2_vol[AeroId::SO4] =
+        config_._molecular_weight_so4 / aero_species_h[AeroId::SO4].density;
+    _mass_2_vol[AeroId::POM] =
+        config_._molecular_weight_pom / aero_species_h[AeroId::POM].density;
 
   } // end(init)
 
@@ -675,7 +691,7 @@ public:
           const AeroId aero_id = mode_aero_species(imode, jspec);
           if (aero_id != AeroId::None) {
             const Real molecular_weight =
-                aero_species(int(aero_id)).molecular_weight;
+                aero_species[aero_id].molecular_weight;
 
             // convert mass mixing ratios to molar mixing ratios
             qmol_i_cur[imode][rename_idx] = conversions::vmr_from_mmr(
@@ -690,7 +706,7 @@ public:
         }
       }
 
-      mam_rename_1subarea_(is_cloudy_cur, smallest_dryvol_value,
+      mam_rename_1subarea_(config, is_cloudy_cur, smallest_dryvol_value,
                            dest_mode_of_mode,                  // in
                            mean_std_dev,                       // in
                            fmode_dist_tail_fac,                // in
@@ -715,7 +731,8 @@ public:
   // Make mam_rename_1subarea public for testing proposes.
   KOKKOS_INLINE_FUNCTION
   void mam_rename_1subarea_(
-      const bool is_cloudy_cur, const Real &smallest_dryvol_value,
+      const AeroConfig &aero_config, const bool is_cloudy_cur,
+      const Real &smallest_dryvol_value,
       const int *dest_mode_of_mode,                             // in
       const Real mean_std_dev[AeroConfig::num_modes()],         // in
       const Real fmode_dist_tail_fac[AeroConfig::num_modes()],  // in
@@ -726,9 +743,9 @@ public:
       const Real diameter_cutoff[AeroConfig::num_modes()],      // in
       const Real ln_dia_cutoff[AeroConfig::num_modes()],        // in
       const Real diameter_threshold[AeroConfig::num_modes()],   // in
-      const Real mass_2_vol[AeroConfig::num_aerosol_ids()],
-      const Real dgnum_amode[AeroConfig::num_modes()], // in
-      Real qnum_i_cur[AeroConfig::num_modes()],        // out
+      const AeroSpeciesData<Real> &mass_2_vol,                  // in
+      const Real dgnum_amode[AeroConfig::num_modes()],          // in
+      Real qnum_i_cur[AeroConfig::num_modes()],                 // out
       Real qmol_i_cur[AeroConfig::num_modes()]
                      [AeroConfig::num_aerosol_ids()], // out
       const Real qmol_i_del[AeroConfig::num_modes()]
@@ -748,15 +765,13 @@ public:
     // Interstitial aerosols: Compute initial (before growth) aerosol dry
     // volume and also the growth in dry volume of the "src" mode
 
-    rename::compute_dryvol_change_in_src_mode(
-        mam4::AeroConfig::num_modes(),       // in
-        mam4::AeroConfig::num_aerosol_ids(), // in
-        dest_mode_of_mode,                   // in
-        qmol_i_cur,                          // in
-        qmol_i_del,                          // in
-        mass_2_vol,                          // in
-        dryvol_i,                            // out
-        deldryvol_i                          // out
+    rename::compute_dryvol_change_in_src_mode(aero_config,       // in
+                                              dest_mode_of_mode, // in
+                                              qmol_i_cur,        // in
+                                              qmol_i_del,        // in
+                                              mass_2_vol,        // in
+                                              dryvol_i,          // out
+                                              deldryvol_i        // out
     );
 
     Real dryvol_c[mam4::AeroConfig::num_modes()] = {zero};
@@ -764,15 +779,13 @@ public:
 
     if (is_cloudy_cur) {
 
-      rename::compute_dryvol_change_in_src_mode(
-          AeroConfig::num_modes(),       // in
-          AeroConfig::num_aerosol_ids(), // in
-          dest_mode_of_mode,             // in
-          qmol_c_cur,                    // in
-          qmol_c_del,                    // in
-          mass_2_vol,                    // in
-          dryvol_c,                      // out
-          deldryvol_c                    // out
+      rename::compute_dryvol_change_in_src_mode(aero_config,       // in
+                                                dest_mode_of_mode, // in
+                                                qmol_c_cur,        // in
+                                                qmol_c_del,        // in
+                                                mass_2_vol,        // in
+                                                dryvol_c,          // out
+                                                deldryvol_c        // out
       );
 
     } // end is_cloudy_cur

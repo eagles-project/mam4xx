@@ -13,19 +13,6 @@
 
 namespace mam4 {
 
-/// @struct AeroSpecies
-/// This type represents an aerosol species.
-struct AeroSpecies {
-  // Molecular weight [kg/mol]
-  Real molecular_weight;
-
-  /// Material density [kg/m^3]
-  Real density;
-
-  /// Hygroscopicity
-  Real hygroscopicity;
-};
-
 /// Identifiers for aerosol species that inhabit MAM4 modes.
 enum class AeroId {
   SOA = 0,        // secondary organic aerosol
@@ -39,13 +26,127 @@ enum class AeroId {
   None = 8        // invalid aerosol species
 };
 
-/// A device-side Kokkos View containing aerosol species.
-using AeroSpeciesView =
-    typename ekat::KokkosTypes<ekat::DefaultDevice>::view_1d<AeroSpecies>;
+/// @struct AeroSpecies
+/// This type represents an aerosol species.
+struct AeroSpecies {
+  // Canonical species identifier
+  AeroId id;
+  // Molecular weight [kg/mol]
+  Real molecular_weight;
 
-/// A host-side Kokkos View for configuring aerosol species.
-using AeroSpeciesHostView =
-    typename ekat::KokkosTypes<ekat::HostDevice>::view_1d<AeroSpecies>;
+  /// Material density [kg/m^3]
+  Real density;
+
+  /// Hygroscopicity
+  Real hygroscopicity;
+};
+
+/// This wraps a view of AeroSpecies, allowing only certain operations, and
+/// indexing by AeroId, which creates a distinction between AeroId and integer
+/// aerosol-mode indices, which are a rich source of bugs.
+template <typename DeviceType> class AeroSpeciesList {
+public:
+  explicit AeroSpeciesList(const std::string &label)
+      : view_(label, int(AeroId::NumSpecies)) {}
+  AeroSpeciesList(const std::string &label,
+                  std::initializer_list<AeroSpecies> species)
+      : view_(label, int(AeroId::NumSpecies)) {
+    for (size_t i = 0; i < species.size(); ++i)
+      view_[i] = species.begin()[i];
+  }
+
+  // access to species via AeroIds
+  KOKKOS_INLINE_FUNCTION
+  const AeroSpecies &operator[](AeroId id) const { return view_[int(id)]; }
+  KOKKOS_INLINE_FUNCTION
+  AeroSpecies &operator[](AeroId id) { return view_[int(id)]; }
+
+  KOKKOS_INLINE_FUNCTION
+  constexpr size_t size() const { return view_.extent(0); }
+
+private:
+  typename ekat::KokkosTypes<DeviceType>::view_1d<AeroSpecies> view_;
+
+  // these functions get access to view_
+  friend AeroSpeciesList<ekat::DefaultDevice>
+  aero_species_on_device(const AeroSpeciesList<ekat::HostDevice> &);
+  friend AeroSpeciesList<ekat::HostDevice>
+  aero_species_on_host(const AeroSpeciesList<ekat::DefaultDevice> &);
+};
+
+/// TODO: Rename these types to indicate that they're not **exactly** Kokkos
+/// views, but rather thin wrappers around them to enforce aerosol identifier
+/// type safety.
+using AeroSpeciesView = AeroSpeciesList<ekat::DefaultDevice>;
+using AeroSpeciesHostView = AeroSpeciesList<ekat::HostDevice>;
+
+// This iterator allows you to loop over all aerosol species with a C++ range
+// iterator. E.g. for (AeroId aid: all_aerosol_ids()) {
+//   // your logic goes here
+// }
+class AeroIdIterator {
+  int value_;
+
+public:
+  KOKKOS_INLINE_FUNCTION
+  explicit AeroIdIterator(int v) : value_(v) {}
+  KOKKOS_INLINE_FUNCTION
+  AeroId operator*() const { return static_cast<AeroId>(value_); }
+  KOKKOS_INLINE_FUNCTION
+  AeroIdIterator &operator++() {
+    ++value_;
+    return *this;
+  }
+  KOKKOS_INLINE_FUNCTION
+  bool operator!=(const AeroIdIterator &other) const {
+    return value_ != other.value_;
+  }
+};
+
+class AeroIdRange {
+  int begin_value_, end_value_;
+
+public:
+  KOKKOS_INLINE_FUNCTION
+  AeroIdRange() : begin_value_(0), end_value_(int(AeroId::NumSpecies)) {}
+  KOKKOS_INLINE_FUNCTION
+  AeroIdIterator begin() const { return AeroIdIterator(begin_value_); }
+  KOKKOS_INLINE_FUNCTION
+  AeroIdIterator end() const { return AeroIdIterator(end_value_); }
+};
+
+KOKKOS_INLINE_FUNCTION
+AeroIdRange all_aerosol_ids() { return AeroIdRange(); }
+
+// Here's a generic container you can associate with an aerosol species,
+// accessing it with an AeroId instead of an integer index.
+template <typename T> class AeroSpeciesData {
+public:
+  AeroSpeciesData() : view_() {}
+  explicit AeroSpeciesData(const std::string &label)
+      : view_(label, int(AeroId::NumSpecies)) {}
+  AeroSpeciesData(const std::string &label, std::initializer_list<T> data)
+      : view_(label, int(AeroId::NumSpecies)) {
+    for (size_t i = 0; i < data.size(); ++i)
+      view_[i] = data.begin()[i];
+  }
+  KOKKOS_INLINE_FUNCTION
+  AeroSpeciesData(const AeroSpeciesData &) = default;
+
+  KOKKOS_INLINE_FUNCTION
+  AeroSpeciesData &operator=(const AeroSpeciesData &) = default;
+
+  // access to species via AeroIds
+  KOKKOS_INLINE_FUNCTION
+  const T &operator[](AeroId id) const { return view_[int(id)]; }
+  KOKKOS_INLINE_FUNCTION
+  T &operator[](AeroId id) { return view_[int(id)]; }
+  KOKKOS_INLINE_FUNCTION
+  constexpr size_t size() const { return view_.extent(0); }
+
+private:
+  typename ekat::KokkosTypes<ekat::DefaultDevice>::view_1d<T> view_;
+};
 
 // default values for aerosol species properties
 namespace defaults {
@@ -88,7 +189,12 @@ AeroSpeciesHostView default_aero_species();
 /// Return a newly-created device view whose data is copied from the given host
 /// view.
 AeroSpeciesView
-aero_species_on_device(const AeroSpeciesHostView &aero_species_on_host);
+aero_species_on_device(const AeroSpeciesHostView &species_on_host);
+
+/// Return a newly-created host view whose data is copied from the given device
+/// view.
+AeroSpeciesHostView
+aero_species_on_host(const AeroSpeciesView &species_on_device);
 
 /// Maps an AeroId to the name of its species.
 std::string aero_id_str(const AeroId id);

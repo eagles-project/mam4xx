@@ -39,11 +39,10 @@ void mode_hygroscopicity_i(const AeroSpeciesView &aero_species,
                            int mode_idx, int k) {
   Real hyg = 0.0;
   Real volume_mixing_ratio = 0.0; // [m3 aerosol / kg air]
-  for (int aid = 0; aid < AeroConfig::num_aerosol_ids(); ++aid) {
-    const int s = aerosol_index_for_mode(static_cast<ModeIndex>(mode_idx),
-                                         static_cast<AeroId>(aid));
+  for (AeroId aid : all_aerosol_ids()) {
+    const int s = aerosol_index_for_mode(static_cast<ModeIndex>(mode_idx), aid);
     if (s >= 0) {
-      const AeroSpecies &species = aero_species(aid);
+      const AeroSpecies &species = aero_species[aid];
       const Real mass_mix_ratio = progs.q_aero_i[mode_idx][s](k);
       volume_mixing_ratio += mass_mix_ratio / species.density;
       hyg += mass_mix_ratio * species.hygroscopicity / species.density;

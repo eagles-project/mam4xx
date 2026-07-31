@@ -10,11 +10,12 @@ using namespace skywalker;
 
 void compute_dryvol_change_in_src_mode(Ensemble *ensemble) {
 
-  auto aero_species_h = mam4::default_aero_species();
+  mam4::AeroConfig aero_config;
+  auto aero_species_h = mam4::aero_species_on_host(aero_config.aero_species);
 
   ensemble->process([=](const Input &input, Output &output) {
-    const int nmodes = mam4::AeroConfig::num_modes();
-    const int naerosol_species = mam4::AeroConfig::num_aerosol_ids();
+    const int nmodes = aero_config.num_modes();
+    const int naerosol_species = aero_config.num_aerosol_ids();
 
     const Real zero = 0;
 
@@ -39,7 +40,7 @@ void compute_dryvol_change_in_src_mode(Ensemble *ensemble) {
     Real diameter_cutoff[nmodes];
     Real ln_dia_cutoff[nmodes];
     Real diameter_threshold[nmodes];
-    Real mass_2_vol[naerosol_species];
+    mam4::AeroSpeciesData<Real> mass_2_vol("mass-to-volume conversion factors");
 
     mam4::rename::find_renaming_pairs(dest_mode_of_mode,    // in
                                       mean_std_dev,         // out
@@ -52,18 +53,18 @@ void compute_dryvol_change_in_src_mode(Ensemble *ensemble) {
                                       ln_dia_cutoff, diameter_threshold);
 
     // We use MWs from rename-mam4 for validation proposes
-    Real molecular_weight_rename[naerosol_species] = {
-        150, 115, 150, 12, 58.5, 135, 250092}; // [kg/kmol]
-    for (int iaero = 0; iaero < naerosol_species; ++iaero) {
-      mass_2_vol[iaero] =
-          molecular_weight_rename[iaero] / aero_species_h(iaero).density;
+    mam4::AeroSpeciesData<Real> molecular_weight_rename(
+        "species molecular weights",
+        {150, 115, 150, 12, 58.5, 135, 250092}); // [kg/kmol]
+    for (mam4::AeroId aid : mam4::all_aerosol_ids()) {
+      mass_2_vol[aid] =
+          molecular_weight_rename[aid] / aero_species_h[aid].density;
     }
 
     Real dryvol[4] = {zero};
     Real deldryvol[4] = {zero};
 
-    mam4::rename::compute_dryvol_change_in_src_mode(nmodes,            // in
-                                                    naerosol_species,  // in
+    mam4::rename::compute_dryvol_change_in_src_mode(aero_config,
                                                     dest_mode_of_mode, // in
                                                     q_mmr,             // in
                                                     q_del_growth,      // in

@@ -6,7 +6,7 @@
 #ifndef MAM4XX_AERO_MODES_HPP
 #define MAM4XX_AERO_MODES_HPP
 
-#include "aero_species.hpp"
+#include "aero_config.hpp"
 #include "gas_species.hpp"
 #include "mam4_constants.hpp"
 
@@ -122,7 +122,7 @@ KOKKOS_INLINE_FUNCTION const mam4::Mode &modes(const int i) {
   return M[i];
 };
 
-// A list of species within each mode for MAM4.
+/// Returns the aerosol species  A list of species within each mode for MAM4.
 KOKKOS_INLINE_FUNCTION AeroId mode_aero_species(const int modeNo,
                                                 const int speciesNo) {
   // A list of species within each mode for MAM4.
@@ -158,19 +158,47 @@ KOKKOS_INLINE_FUNCTION int num_species_mode(const int i) {
 /// -1 if the species is not found within the mode.
 KOKKOS_INLINE_FUNCTION
 int aerosol_index_for_mode(ModeIndex mode, AeroId aero_id) {
-  int mode_index = static_cast<int>(mode);
-  for (int s = 0; s < 7; ++s) {
+  for (int s = 0; s < int(AeroId::NumSpecies); ++s) {
+    int mode_index = static_cast<int>(mode);
     if (aero_id == mode_aero_species(mode_index, s)) {
       return s;
     }
   }
   return -1;
 }
+
 /// Convenient function that returns bool indicating if species is
 /// within mode.
 KOKKOS_INLINE_FUNCTION
 bool mode_contains_species(ModeIndex mode, AeroId aero_id) {
   return -1 != aerosol_index_for_mode(mode, aero_id);
+}
+
+/// Calls the given lambda function f for each species in mode1 that also
+/// appears in mode2, returning the number of species found in both modes. The
+/// signature of the function f is: void f(const AeroId species_id,
+///        int idx_of_species_in_mode1,
+///        int idx_of_species_in_mode2,
+///        int num_matches_so_far)
+/// and can use any variable in the scope at which
+/// for_aerosol_species_common_to_modes is called.
+template <typename Lambda>
+KOKKOS_INLINE_FUNCTION int
+for_matching_aero_species_in_modes(const AeroConfig &aero_config,
+                                   const ModeIndex mode1, const ModeIndex mode2,
+                                   Lambda f) {
+  int matches = 0;
+  for (int s_idx1 = 0; s_idx1 < aero_config.num_aerosol_ids(); ++s_idx1) {
+    AeroId species1 = mode_aero_species(int(mode1), s_idx1);
+    for (int s_idx2 = 0; s_idx2 < aero_config.num_aerosol_ids(); ++s_idx2) {
+      AeroId species2 = mode_aero_species(int(mode2), s_idx2);
+      if (species1 == species2) {
+        f(species1, s_idx1, s_idx2, matches);
+        ++matches;
+      }
+    }
+  }
+  return matches;
 }
 
 } // namespace mam4

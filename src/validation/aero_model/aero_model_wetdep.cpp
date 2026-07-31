@@ -167,7 +167,7 @@ void aero_model_wetdep(Ensemble *ensemble) {
     mam4::wetdep::View1D work("work", work_len);
 
     mam4::modal_aero_calcsize::CalcsizeData cal_data;
-    cal_data.initialize();
+    cal_data.initialize(aero_config);
     const bool update_mmr = true;
     cal_data.set_update_mmr(update_mmr);
 

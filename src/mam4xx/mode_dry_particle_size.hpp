@@ -35,11 +35,10 @@ void mode_avg_dry_particle_diam(const AeroSpeciesView &aero_species,
                                 const Prognostics &progs, int mode_idx, int k) {
   Real volume_mixing_ratio_i = 0.0; // [m3 aerosol / kg air]
   Real volume_mixing_ratio_c = 0.0; // [m3 aerosol / kg air]
-  for (int aid = 0; aid < AeroConfig::num_aerosol_ids(); ++aid) {
-    const int s = aerosol_index_for_mode(static_cast<ModeIndex>(mode_idx),
-                                         static_cast<AeroId>(aid));
+  for (AeroId aid : all_aerosol_ids()) {
+    const int s = aerosol_index_for_mode(static_cast<ModeIndex>(mode_idx), aid);
     if (s >= 0) {
-      const AeroSpecies &species = aero_species(aid);
+      const AeroSpecies &species = aero_species[aid];
       volume_mixing_ratio_i += progs.q_aero_i[mode_idx][s](k) / species.density;
 
       volume_mixing_ratio_c += progs.q_aero_c[mode_idx][s](k) / species.density;

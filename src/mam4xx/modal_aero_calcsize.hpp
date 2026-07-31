@@ -19,7 +19,7 @@ namespace modal_aero_calcsize {
 constexpr int maxd_aspectype = ndrop::maxd_aspectype;
 
 inline void init_calcsize(
-    const AeroSpeciesHostView &aero_species,
+    const AeroConfig &aero_config,
     Real inv_density[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
     Real num2vol_ratio_min[AeroConfig::num_modes()],
     Real num2vol_ratio_max[AeroConfig::num_modes()],
@@ -40,36 +40,33 @@ inline void init_calcsize(
 
   // find aerosol species in accumulation that can be transfer to aitken mode
   const int accum_idx = int(ModeIndex::Accumulation);
-  const int aitken_idx = int(ModeIndex::Aitken);
+
+  // first assume all species cannot be transferred.
+  for (int isp = 0; isp < aero_config.num_aerosol_ids(); ++isp) {
+    noxf_acc2ait[isp] = true;
+  }
 
   // check if accumulation species exists in aitken mode
   // also save idx for transfer
-  int count = 0;
-  for (int isp = 0; isp < num_species_mode(accum_idx); ++isp) {
-    // assume species can not be transfer.
-    noxf_acc2ait[isp] = true;
-    AeroId sp_accum = mode_aero_species(accum_idx, isp);
-
-    for (int jsp = 0; jsp < num_species_mode(aitken_idx); ++jsp) {
-      AeroId sp_aitken = mode_aero_species(aitken_idx, jsp);
-      if (sp_accum == sp_aitken) {
+  int count = for_matching_aero_species_in_modes(
+      aero_config, ModeIndex::Accumulation, ModeIndex::Aitken,
+      [&](AeroId species_id, int species_idx_in_mode1, int species_idx_in_mode2,
+          int num_matches_so_far) {
         // false : can be transfer.
-        noxf_acc2ait[isp] = false;
+        noxf_acc2ait[species_idx_in_mode1] = false;
         // save index for transfer from accumulation to aitken mode
         // adding offset because we are using this index for state_q
         // Note: we assuimg accum mode is the first mode
-        acc_spec_in_ait[count] = isp + utils::aero_start_ind();
+        acc_spec_in_ait[num_matches_so_far] =
+            species_idx_in_mode1 + utils::aero_start_ind();
         // save index for transfer from aitken to accumulation mode
         // adding offset because we are using this index for state_q
         // offset: aero_start + num of spec accum + 1 (number concentration)
         // Note: we assumig Aitken mode is the second mode
-        ait_spec_in_acc[count] =
-            jsp + utils::aero_start_ind() + num_species_mode(accum_idx) + 1;
-        count++;
-        break;
-      }
-    } // end aitken foor
-  }   // end accumulation for
+        ait_spec_in_acc[num_matches_so_far] = species_idx_in_mode2 +
+                                              utils::aero_start_ind() +
+                                              num_species_mode(accum_idx) + 1;
+      });
   n_common_species_ait_accum = count;
 
   // Set mode parameters.
@@ -95,8 +92,8 @@ inline void init_calcsize(
     // compute inv density; density is constant, so we can compute in init.
     const auto n_spec = num_species_mode(m);
     for (int ispec = 0; ispec < n_spec; ispec++) {
-      const int aero_id = int(mode_aero_species(m, ispec));
-      inv_density[m][ispec] = Real(1.0) / aero_species(aero_id).density;
+      AeroId aid = mode_aero_species(m, ispec);
+      inv_density[m][ispec] = Real(1.0) / aero_config.aero_species[aid].density;
     } // for(ispec)
     // FIXME: do we need to update num2vol_ratio_min_nmodes and
     // num2vol_ratio_max_nmodes as well?
@@ -130,8 +127,12 @@ struct CalcsizeData {
   const bool do_aitacc_transfer = true;
   bool update_mmr = false;
 
-  void initialize() {
-    init_calcsize(default_aero_species(), inv_density, num2vol_ratio_min,
+  void initialize(const AeroConfig &aero_config) {
+    ndrop::get_e3sm_parameters(nspec_amode, lspectype_amode, lmassptr_amode,
+                               numptr_amode, specdens_amode, spechygro, mam_idx,
+                               mam_cnst_idx);
+
+    init_calcsize(aero_config, inv_density, num2vol_ratio_min,
                   num2vol_ratio_max, num2vol_ratio_max_nmodes,
                   num2vol_ratio_min_nmodes, num2vol_ratio_nom_nmodes,
                   dgnmin_nmodes, dgnmax_nmodes, dgnnom_nmodes,

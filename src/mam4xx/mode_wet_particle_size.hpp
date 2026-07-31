@@ -218,13 +218,13 @@ void mode_avg_wet_particle_diam_water_uptake(const Diagnostics &diags,
 //    @param dgn_awet [out] geometric mean diameter (m) of each aerosol mode
 // ------------------------------------------------------------------------
 KOKKOS_INLINE_FUNCTION
-void diag_dgn_wet(
-    const mam4::AeroConfig &aero_config,
-    const Real qaer_cur[mam4::AeroConfig::num_aerosol_ids()]
-                       [mam4::AeroConfig::num_modes()],
-    const Real qnum_cur[mam4::AeroConfig::num_modes()],
-    const Real molecular_weight_gm[mam4::AeroConfig::num_aerosol_ids()],
-    const Real dwet_ddry_ratio, Real dgn_awet[mam4::AeroConfig::num_modes()]) {
+void diag_dgn_wet(const mam4::AeroConfig &aero_config,
+                  const Real qaer_cur[mam4::AeroConfig::num_aerosol_ids()]
+                                     [mam4::AeroConfig::num_modes()],
+                  const Real qnum_cur[mam4::AeroConfig::num_modes()],
+                  const AeroSpeciesData<Real> molecular_weight_gm,
+                  const Real dwet_ddry_ratio,
+                  Real dgn_awet[mam4::AeroConfig::num_modes()]) {
   static constexpr int num_aer = mam4::AeroConfig::num_aerosol_ids();
   static constexpr int num_modes = mam4::AeroConfig::num_modes();
   // --------------------------
@@ -236,9 +236,9 @@ void diag_dgn_wet(
     for (int iaer = 0; iaer < num_aer; ++iaer) {
       const AeroId aid = mode_aero_species(n, iaer);
       if (aid != AeroId::None) {
-        const Real weight_gm_per_mol = molecular_weight_gm[iaer];
+        const Real weight_gm_per_mol = molecular_weight_gm[aid];
         const Real tmpa = qaer_cur[iaer][n] * weight_gm_per_mol;
-        tmp_dryvol += tmpa / aero_config.aero_species(int(aid)).density;
+        tmp_dryvol += tmpa / aero_config.aero_species[aid].density;
       }
     }
     // Convert dry volume to dry diameter, then to wet diameter

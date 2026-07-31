@@ -92,8 +92,6 @@ KOKKOS_INLINE_FUNCTION void mam_pcarbon_aging_frac(
         frac_coag) { // fraction of aerosol change due to coagulation [unitless]
 
   const int ipair = 0;
-  const int iaer_so4 = static_cast<int>(AeroId::SO4);
-  const int iaer_soa = static_cast<int>(AeroId::SOA);
 
   const int imom_pc = static_cast<int>(ModeIndex::PrimaryCarbon);
 
@@ -103,9 +101,9 @@ KOKKOS_INLINE_FUNCTION void mam_pcarbon_aging_frac(
 
   // Compute the aerosol volume per mole
   const Real so4_vol =
-      _molecular_weight_so4 * 1000.0 / aero_species(iaer_so4).density;
+      _molecular_weight_so4 * 1000.0 / aero_species[AeroId::SO4].density;
   const Real soa_vol =
-      _molecular_weight_soa * 1000.0 / aero_species(iaer_soa).density;
+      _molecular_weight_soa * 1000.0 / aero_species[AeroId::SOA].density;
 
   // (Bad Constants) for hygroscopicitiy
   constexpr Real hygro_soa = 0.14000000000000001;
@@ -113,6 +111,11 @@ KOKKOS_INLINE_FUNCTION void mam_pcarbon_aging_frac(
   const Real fac_m2v_eqvhyg_aer = soa_vol * hygro_soa / hygro_so4;
 
   // for default MAM4 only so4 and soa contribute to aging
+  // FIXME: should iaer_so4 and iaer_soa be species mode indices instead of
+  // AeroIds??
+  const int iaer_so4 = static_cast<int>(AeroId::SO4);
+  const int iaer_soa = static_cast<int>(AeroId::SOA);
+
   const Real vol_shell = qaer_cur[iaer_so4][imom_pc] * so4_vol +
                          qaer_cur[iaer_soa][imom_pc] * fac_m2v_eqvhyg_aer;
   Real qaer_del_cond_tmp =

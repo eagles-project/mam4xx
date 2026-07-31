@@ -78,7 +78,7 @@ void mam_rename_1subarea(Ensemble *ensemble) {
     Real diameter_cutoff[nmodes];
     Real ln_dia_cutoff[nmodes];
     Real diameter_threshold[nmodes];
-    Real mass_2_vol[naerosol_species];
+    mam4::AeroSpeciesData<Real> mass_2_vol("mass-to-volume conversion factors");
 
     mam4::rename::find_renaming_pairs(dest_mode_of_mode,    // in
                                       mean_std_dev,         // out
@@ -95,29 +95,30 @@ void mam_rename_1subarea(Ensemble *ensemble) {
       dgnum_amode[m] = mam4::modes(m).nom_diameter;
     }
     //// We use MWs from rename-mam4 for validation proposes
-    Real molecular_weight_rename[naerosol_species] = {
-        150, 115, 150, 12, 58.5, 135, 250092}; // [kg/kmol]
-    for (int iaero = 0; iaero < naerosol_species; ++iaero) {
-      mass_2_vol[iaero] =
-          molecular_weight_rename[iaero] / aero_species_h(iaero).density;
+    mam4::AeroSpeciesData<Real> molecular_weight_rename(
+        "species molecular weights",
+        {150, 115, 150, 12, 58.5, 135, 250092}); // [kg/kmol]
+    for (mam4::AeroId aid : mam4::all_aerosol_ids()) {
+      mass_2_vol[aid] =
+          molecular_weight_rename[aid] / aero_species_h[aid].density;
     }
 
-    this_rename.mam_rename_1subarea_(iscloudy, smallest_dryvol_value,
-                                     dest_mode_of_mode,    // in
-                                     mean_std_dev,         // in
-                                     fmode_dist_tail_fac,  // in
-                                     v2n_lo_rlx,           // in
-                                     v2n_hi_rlx,           // in
-                                     ln_diameter_tail_fac, // in
-                                     num_pairs,            // in
-                                     diameter_cutoff,      // in
-                                     ln_dia_cutoff,        // in
-                                     diameter_threshold,   // in
-                                     mass_2_vol,
-                                     dgnum_amode, // in
-                                     qnum_cur, qaer_cur, qaer_del_grow4rnam,
-                                     qnumcw_cur, qaercw_cur,
-                                     qaercw_del_grow4rnam);
+    this_rename.mam_rename_1subarea_(
+        mam4_config, iscloudy, smallest_dryvol_value,
+        dest_mode_of_mode,    // in
+        mean_std_dev,         // in
+        fmode_dist_tail_fac,  // in
+        v2n_lo_rlx,           // in
+        v2n_hi_rlx,           // in
+        ln_diameter_tail_fac, // in
+        num_pairs,            // in
+        diameter_cutoff,      // in
+        ln_dia_cutoff,        // in
+        diameter_threshold,   // in
+        mass_2_vol,
+        dgnum_amode, // in
+        qnum_cur, qaer_cur, qaer_del_grow4rnam, qnumcw_cur, qaercw_cur,
+        qaercw_del_grow4rnam);
 
     std::vector<Real> qnum_cur_out(nmodes + 1, 0);
     mam4::validation::convert_modal_array_to_vector(qnum_cur, qnum_cur_out);

@@ -14,6 +14,7 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
     constexpr int pver = mam4::ndrop::pver;
     constexpr int ntot_amode = mam4::AeroConfig::num_modes();
 
+    mam4::AeroConfig aero_config;
     using View2D = mam4::DeviceType::view_2d<Real>;
 
     auto state_q_db = input.get_array("state_q");
@@ -38,7 +39,7 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
     View2D dgnumdry_m("dgnumdry_m", pver, ntot_amode);
     View2D dgncur_c("dgncur_c", pver, ntot_amode);
     mam4::modal_aero_opt::CalcsizeData cal_data;
-    cal_data.initialize();
+    cal_data.initialize(aero_config);
 
     auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
     Kokkos::parallel_for(

@@ -457,15 +457,15 @@ public:
   static Real specdens_amode(const AeroSpeciesView &aero_species, const int i) {
     // clang-format off
     const Real specdens_amode[maxd_aspectype] = {
-      aero_species(int(AeroId::SO4)).density,
+      aero_species[AeroId::SO4].density,
       mam4::max(),
       mam4::max(),
-      aero_species(int(AeroId::POM)).density,
-      aero_species(int(AeroId::SOA)).density,
-      aero_species(int(AeroId::BC)).density,
-      aero_species(int(AeroId::NaCl)).density,
-      aero_species(int(AeroId::DST)).density,
-      aero_species(int(AeroId::MOM)).density,
+      aero_species[AeroId::POM].density,
+      aero_species[AeroId::SOA].density,
+      aero_species[AeroId::BC].density,
+      aero_species[AeroId::NaCl].density,
+      aero_species[AeroId::DST].density,
+      aero_species[AeroId::MOM].density,
       0, 0, 0, 0, 0};
     // clang-format on
     return specdens_amode[i];
@@ -477,15 +477,15 @@ public:
   static Real spechygro(const AeroSpeciesView &aero_species, const int i) {
     // clang-format off
     const Real spechygro[maxd_aspectype] = {
-       aero_species(int(AeroId::SO4)).hygroscopicity,
+       aero_species[AeroId::SO4].hygroscopicity,
        mam4::max(),
        mam4::max(),
-       aero_species(int(AeroId::POM)).hygroscopicity,
-       0.1400000000e+00, // FIXME: should be aero_species(int(AeroId::SOA)).hygroscopicity
-       aero_species(int(AeroId::BC)).hygroscopicity,
-       aero_species(int(AeroId::NaCl)).hygroscopicity,
-       0.6800000000e-01, // FIXME: should be aero_species(int(AeroId::DST)).hygroscopicity,
-       aero_species(int(AeroId::MOM)).hygroscopicity,
+       aero_species[AeroId::POM].hygroscopicity,
+       0.1400000000e+00, // FIXME: should be aero_species(AeroId::SOA).hygroscopicity
+       aero_species[AeroId::BC].hygroscopicity,
+       aero_species[AeroId::NaCl].hygroscopicity,
+       0.6800000000e-01, // FIXME: should be aero_species(AeroId::DST).hygroscopicity,
+       aero_species[AeroId::MOM].hygroscopicity,
        0, 0, 0, 0, 0};
     // clang-format on
     return spechygro[i];
