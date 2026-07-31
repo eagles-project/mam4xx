@@ -73,11 +73,11 @@ TEST_CASE("modal_averages", "") {
     Real dry_aero_mean_particle_diam_total[4];
     for (int m = 0; m < 4; ++m) {
       Real dry_vol = 0.0;
-      for (int aid = 0; aid < 7; ++aid) {
-        const int s = aerosol_index_for_mode(static_cast<mam4::ModeIndex>(m),
-                                             static_cast<mam4::AeroId>(aid));
+      for (mam4::AeroId aid : mam4::all_aerosol_ids()) {
+        const int s =
+            aerosol_index_for_mode(static_cast<mam4::ModeIndex>(m), aid);
         if (s >= 0) {
-          dry_vol += mass_mixing_ratio / aero_species_h(aid).density;
+          dry_vol += mass_mixing_ratio / aero_species_h[aid].density;
         }
       }
       const Real mean_vol = dry_vol / number_mixing_ratio;
@@ -152,11 +152,11 @@ TEST_CASE("modal_averages", "") {
     for (int m = 0; m < 4; ++m) {
       Real dry_vol = 0.0;
       Real hyg = 0.0;
-      for (int aid = 0; aid < 7; ++aid) {
-        const int s = aerosol_index_for_mode(static_cast<mam4::ModeIndex>(m),
-                                             static_cast<mam4::AeroId>(aid));
+      for (mam4::AeroId aid : mam4::all_aerosol_ids()) {
+        const int s =
+            aerosol_index_for_mode(static_cast<mam4::ModeIndex>(m), aid);
         if (s >= 0) {
-          const mam4::AeroSpecies &species = aero_species_h(aid);
+          const mam4::AeroSpecies &species = aero_species_h[aid];
           dry_vol += mass_mixing_ratio / species.density;
           hyg += mass_mixing_ratio * species.hygroscopicity / species.density;
         }

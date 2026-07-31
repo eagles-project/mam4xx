@@ -18,6 +18,7 @@ void modal_aero_sw(Ensemble *ensemble) {
     constexpr Real zero = 0;
     Real pblh = 1000;
 
+    mam4::AeroConfig aero_config;
     constexpr int maxd_aspectype = mam4::ndrop::maxd_aspectype;
     constexpr int pver = mam4::nlev;
 
@@ -281,7 +282,7 @@ void modal_aero_sw(Ensemble *ensemble) {
     mam4::Prognostics progs = mam4::validation::create_prognostics(mam4::nlev);
 
     mam4::modal_aero_opt::CalcsizeData cal_data;
-    cal_data.initialize();
+    cal_data.initialize(aero_config);
 
     auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
     Kokkos::parallel_for(

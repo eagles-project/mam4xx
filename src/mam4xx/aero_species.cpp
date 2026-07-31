@@ -9,37 +9,39 @@
 namespace mam4 {
 
 AeroSpeciesHostView default_aero_species() {
-  AeroSpeciesHostView species("Aerosol species", int(AeroId::NumSpecies));
-  species[int(AeroId::SOA)] =
-      AeroSpecies{Constants::molec_weight_c, defaults::mam4_density_soa,
-                  defaults::mam4_hyg_soa};
-  species[int(AeroId::SO4)] =
-      AeroSpecies{Constants::molec_weight_so4, defaults::mam4_density_so4,
-                  defaults::mam4_hyg_so4};
-  species[int(AeroId::POM)] =
-      AeroSpecies{Constants::molec_weight_c, defaults::mam4_density_pom,
-                  defaults::mam4_hyg_pom};
-  species[int(AeroId::BC)] =
-      AeroSpecies{Constants::molec_weight_c, defaults::mam4_density_bc,
-                  defaults::mam4_hyg_bc};
-  species[int(AeroId::NaCl)] =
-      AeroSpecies{Constants::molec_weight_nacl, defaults::mam4_density_nacl,
-                  defaults::mam4_hyg_nacl};
-  species[int(AeroId::DST)] =
-      AeroSpecies{defaults::mam4_molec_weight_dst, defaults::mam4_density_dst,
-                  defaults::mam4_hyg_dst};
-  species[int(AeroId::MOM)] =
-      AeroSpecies{defaults::mam4_molec_weight_mom, defaults::mam4_density_mom,
-                  defaults::mam4_hyg_mom};
+  AeroSpeciesHostView species(
+      "Aerosol species",
+      {
+          AeroSpecies{AeroId::SOA, Constants::molec_weight_c,
+                      defaults::mam4_density_soa, defaults::mam4_hyg_soa},
+          AeroSpecies{AeroId::SO4, Constants::molec_weight_so4,
+                      defaults::mam4_density_so4, defaults::mam4_hyg_so4},
+          AeroSpecies{AeroId::POM, Constants::molec_weight_c,
+                      defaults::mam4_density_pom, defaults::mam4_hyg_pom},
+          AeroSpecies{AeroId::BC, Constants::molec_weight_c,
+                      defaults::mam4_density_bc, defaults::mam4_hyg_bc},
+          AeroSpecies{AeroId::NaCl, Constants::molec_weight_nacl,
+                      defaults::mam4_density_nacl, defaults::mam4_hyg_nacl},
+          AeroSpecies{AeroId::DST, defaults::mam4_molec_weight_dst,
+                      defaults::mam4_density_dst, defaults::mam4_hyg_dst},
+          AeroSpecies{AeroId::MOM, defaults::mam4_molec_weight_mom,
+                      defaults::mam4_density_mom, defaults::mam4_hyg_mom},
+      });
   return species;
 }
 
 AeroSpeciesView
 aero_species_on_device(const AeroSpeciesHostView &species_on_host) {
-  AeroSpeciesView species_on_device("On-device aerosol species",
-                                    species_on_host.extent(0));
-  Kokkos::deep_copy(species_on_device, species_on_host);
+  AeroSpeciesView species_on_device("On-device aerosol species");
+  Kokkos::deep_copy(species_on_device.view_, species_on_host.view_);
   return species_on_device;
+}
+
+AeroSpeciesHostView
+aero_species_on_host(const AeroSpeciesView &species_on_device) {
+  AeroSpeciesHostView species_on_host("On-host aerosol species");
+  Kokkos::deep_copy(species_on_host.view_, species_on_device.view_);
+  return species_on_host;
 }
 
 std::string aero_id_str(const AeroId aid) {

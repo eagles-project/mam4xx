@@ -72,15 +72,14 @@ inline void init_scavimptbl(const AeroConfig &aero_config,
     sigmag_amode[i] = modes(i).mean_std_dev;
   }
 
-  auto aero_species = Kokkos::create_mirror(aero_config.aero_species);
-  Kokkos::deep_copy(aero_species, aero_config.aero_species);
+  auto aero_species_h = aero_species_on_host(aero_config.aero_species);
 
   // Note: Original code uses the following aerosol densities.
   // sulfate, sulfate, dust, p-organic
-  aerosol_dry_density[0] = aero_species(int(AeroId::SO4)).density;
-  aerosol_dry_density[1] = aero_species(int(AeroId::SO4)).density;
-  aerosol_dry_density[2] = aero_species(int(AeroId::DST)).density;
-  aerosol_dry_density[3] = aero_species(int(AeroId::POM)).density;
+  aerosol_dry_density[0] = aero_species_h[AeroId::SO4].density;
+  aerosol_dry_density[1] = aero_species_h[AeroId::SO4].density;
+  aerosol_dry_density[2] = aero_species_h[AeroId::DST].density;
+  aerosol_dry_density[3] = aero_species_h[AeroId::POM].density;
   aero_model::modal_aero_bcscavcoef_init(dgnum_amode, sigmag_amode,
                                          aerosol_dry_density, scavimptblnum,
                                          scavimptblvol);

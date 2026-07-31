@@ -20,6 +20,8 @@ void aero_rad_props_lw(Ensemble *ensemble) {
     constexpr Real zero = 0;
     Real pblh = 1000;
 
+    mam4::AeroConfig aero_config;
+
     const auto dt = input.get_array("dt")[0];
     // const Real t = zero;
     const auto state_q_db = input.get_array("state_q");
@@ -269,7 +271,7 @@ void aero_rad_props_lw(Ensemble *ensemble) {
 
     mam4::Prognostics progs = mam4::validation::create_prognostics(mam4::nlev);
     mam4::modal_aero_opt::CalcsizeData cal_data;
-    cal_data.initialize();
+    cal_data.initialize(aero_config);
 
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {

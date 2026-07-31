@@ -7,6 +7,7 @@
 #define MAM4XX_CALCSIZE_HPP
 
 #include "aero_config.hpp"
+#include "aero_modes.hpp"
 #include "atmosphere.hpp"
 #include "conversions.hpp"
 #include "floating_point.hpp"
@@ -896,37 +897,30 @@ public:
     config_ = calcsize_config;
     const Real one = 1.0;
 
-    // find aerosol species in accumulation that can be transfer to aitken mode
-    const int accum_idx = int(ModeIndex::Accumulation);
-    const int aitken_idx = int(ModeIndex::Aitken);
+    // find aerosol species in accumulation that can be transferred to aitken
+    // mode
 
-    // check if accumulation species exists in aitken mode
-    // also save idx for transfer
-    int count = 0;
-    for (int isp = 0; isp < num_species_mode(accum_idx); ++isp) {
-      // assume species can not be transfer.
+    // first assume all species cannot be transferred.
+    for (int isp = 0; isp < aero_config.num_aerosol_ids(); ++isp) {
       _noxf_acc2ait[isp] = true;
-      AeroId sp_accum = mode_aero_species(accum_idx, isp);
+    }
 
-      for (int jsp = 0; jsp < num_species_mode(aitken_idx); ++jsp) {
-        AeroId sp_aitken = mode_aero_species(aitken_idx, jsp);
-        if (sp_accum == sp_aitken) {
-          // false : can be transfer.
-          _noxf_acc2ait[isp] = false;
+    // now find species common to the two modes and record their indices
+    int count = for_matching_aero_species_in_modes(
+        aero_config, ModeIndex::Accumulation, ModeIndex::Aitken,
+        [&](AeroId species_id, int species_idx_in_mode1,
+            int species_idx_in_mode2, int num_matches_so_far) {
+          // false : can be transferred
+          _noxf_acc2ait[species_idx_in_mode1] = false;
           // save index for transfer from accumulation to aitken mode
-          _acc_spec_in_ait[count] = isp;
+          _acc_spec_in_ait[num_matches_so_far] = species_idx_in_mode1;
           // save index for transfer from aitken to accumulation mode
-          _ait_spec_in_acc[count] = jsp;
-          count++;
-          break;
-        }
-      } // end aitken foor
-    }   // end accumulation for
+          _ait_spec_in_acc[num_matches_so_far] = species_idx_in_mode2;
+        });
     _n_common_species_ait_accum = count;
 
     // Set mode parameters.
-    auto aero_species_h = Kokkos::create_mirror_view(aero_config.aero_species);
-    Kokkos::deep_copy(aero_species_h, aero_config.aero_species);
+    auto aero_species_h = aero_species_on_host(aero_config.aero_species);
     for (int m = 0; m < AeroConfig::num_modes(); ++m) {
       // FIXME: There is a comment in modal_aero_newnuc.F90 that Dick Easter
       // FIXME: thinks that dgnum_aer isn't used in MAM4, but it is actually
@@ -949,8 +943,8 @@ public:
       // compute inv density; density is constant, so we can compute in init.
       const auto n_spec = num_species_mode(m);
       for (int ispec = 0; ispec < n_spec; ispec++) {
-        const int aero_id = int(mode_aero_species(m, ispec));
-        _inv_density[m][ispec] = Real(1.0) / aero_species_h(aero_id).density;
+        auto aero_id = mode_aero_species(m, ispec);
+        _inv_density[m][ispec] = Real(1.0) / aero_species_h[aero_id].density;
       } // for(ispec)
       // FIXME: do we need to update num2vol_ratio_min_nmodes and
       // num2vol_ratio_max_nmodes as well?

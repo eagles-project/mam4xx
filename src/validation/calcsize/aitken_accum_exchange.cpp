@@ -69,8 +69,7 @@ void aitken_accum_exchange(Ensemble *ensemble) {
     const Real dryvol_i_accsv = input.get("dryvol_i_accsv");
     const Real dryvol_c_accsv = input.get("dryvol_c_accsv");
 
-    auto aero_species_h = Kokkos::create_mirror_view(mam4_config.aero_species);
-    Kokkos::deep_copy(aero_species_h, mam4_config.aero_species);
+    auto aero_species_h = aero_species_on_host(mam4_config.aero_species);
     Real inv_density[nmodes][nspec];
 
     int count = 0;
@@ -96,8 +95,8 @@ void aitken_accum_exchange(Ensemble *ensemble) {
         h_prog_aero_c(0) = q_c[count];
         Kokkos::deep_copy(progs.q_aero_c[imode][isp], h_prog_aero_c);
 
-        const int aero_id = int(mam4::mode_aero_species(imode, isp));
-        inv_density[imode][isp] = Real(1.0) / aero_species_h(aero_id).density;
+        mam4::AeroId aero_id = mam4::mode_aero_species(imode, isp);
+        inv_density[imode][isp] = Real(1.0) / aero_species_h[aero_id].density;
 
         count++;
       } // end species

@@ -15,6 +15,8 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
     constexpr int ntot_amode = mam4::AeroConfig::num_modes();
     using View2D = mam4::DeviceType::view_2d<Real>;
 
+    mam4::AeroConfig aero_config;
+
     auto state_q_db = input.get_array("state_q");
     auto qqcw_db = input.get_array("qqcw");
     const auto dt = input.get_array("dt")[0];
@@ -45,7 +47,7 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
     View2D dqqcwdt("dqqcwdt", pver, pcnst);
 
     mam4::modal_aero_calcsize::CalcsizeData cal_data;
-    cal_data.initialize();
+    cal_data.initialize(aero_config);
     const bool update_mmr = true;
     cal_data.set_update_mmr(update_mmr);
 

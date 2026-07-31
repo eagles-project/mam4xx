@@ -934,8 +934,8 @@ KOKKOS_INLINE_FUNCTION void calculate_mass_mean_radius(
   hetraer[1] = r_dust_a1_prescribed;
   hetraer[2] = r_dust_a3_prescribed;
 
-  const Real specdens_bc = aero_species(int(AeroId::BC)).density;
-  const Real specdens_dust = aero_species(int(AeroId::DST)).density;
+  const Real specdens_bc = aero_species[AeroId::BC].density;
+  const Real specdens_dust = aero_species[AeroId::DST].density;
   // BC
   if (((bcmac + bcmpc) * 1.0e-3 > aermc_min_threshold) &
       (bc_num > aernum_min_threshold)) {
@@ -1002,12 +1002,12 @@ KOKKOS_INLINE_FUNCTION void calculate_coated_fraction(
   const Real pom_equivso4_factor = spechygro_pom / spechygro_so4;
   const Real mom_equivso4_factor = spechygro_mom / spechygro_so4;
 
-  const Real specdens_so4 = aero_species(int(AeroId::SO4)).density;
-  const Real specdens_pom = aero_species(int(AeroId::POM)).density;
-  const Real specdens_mom = aero_species(int(AeroId::MOM)).density;
-  const Real specdens_soa = aero_species(int(AeroId::SOA)).density;
-  const Real specdens_dst = aero_species(int(AeroId::DST)).density;
-  const Real specdens_bc = aero_species(int(AeroId::BC)).density;
+  const Real specdens_so4 = aero_species[AeroId::SO4].density;
+  const Real specdens_pom = aero_species[AeroId::POM].density;
+  const Real specdens_mom = aero_species[AeroId::MOM].density;
+  const Real specdens_soa = aero_species[AeroId::SOA].density;
+  const Real specdens_dst = aero_species[AeroId::DST].density;
+  const Real specdens_bc = aero_species[AeroId::BC].density;
 
   vol_shell[1] =
       (so4mac / specdens_so4 + pommac * pom_equivso4_factor / specdens_pom +
