@@ -120,21 +120,38 @@ AeroIdRange all_aerosol_ids() { return AeroIdRange(); }
 
 // Here's a generic container you can associate with an aerosol species,
 // accessing it with an AeroId instead of an integer index.
-template <typename T> class AeroSpeciesData {
+template <typename T, typename DeviceType = ekat::DefaultDevice>
+class AeroSpeciesData {
 public:
   AeroSpeciesData() : view_() {}
   explicit AeroSpeciesData(const std::string &label)
       : view_(label, int(AeroId::NumSpecies)) {}
   AeroSpeciesData(const std::string &label, std::initializer_list<T> data)
       : view_(label, int(AeroId::NumSpecies)) {
-    for (size_t i = 0; i < data.size(); ++i)
-      view_[i] = data.begin()[i];
+    if (not std::is_same<DeviceType, ekat::HostDevice>::value) {
+      auto host_data = on_host();
+      for (size_t i = 0; i < data.size(); ++i)
+        host_data.view_[i] = data.begin()[i];
+      copy_from_host(host_data);
+    }
   }
   KOKKOS_INLINE_FUNCTION
   AeroSpeciesData(const AeroSpeciesData &) = default;
 
   KOKKOS_INLINE_FUNCTION
   AeroSpeciesData &operator=(const AeroSpeciesData &) = default;
+
+  // allocates a copy of the species data on the host
+  AeroSpeciesData<T, ekat::HostDevice>
+  on_host(const std::string label = "") const {
+    AeroSpeciesData<T, ekat::HostDevice> host_data(label);
+    Kokkos::deep_copy(host_data.view_, view_);
+    return host_data;
+  }
+  // copies host data into place on device
+  void copy_from_host(const AeroSpeciesData<T, ekat::HostDevice> &host_data) {
+    Kokkos::deep_copy(view_, host_data.view_);
+  }
 
   // access to species via AeroIds
   KOKKOS_INLINE_FUNCTION
@@ -145,7 +162,10 @@ public:
   constexpr size_t size() const { return view_.extent(0); }
 
 private:
-  typename ekat::KokkosTypes<ekat::DefaultDevice>::view_1d<T> view_;
+  typename ekat::KokkosTypes<DeviceType>::view_1d<T> view_;
+
+  friend class AeroSpeciesData<T, ekat::HostDevice>;
+  friend class AeroSpeciesData<T, ekat::DefaultDevice>;
 };
 
 // default values for aerosol species properties

@@ -16,10 +16,6 @@ void mam_rename_1subarea(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     int nlev = 1;
 
-    mam4::Prognostics progs(nlev);
-    mam4::Diagnostics diags(nlev);
-    mam4::Tendencies tends(nlev);
-
     mam4::AeroConfig mam4_config(aero_species);
     mam4::RenameProcess process(mam4_config);
 
@@ -78,7 +74,6 @@ void mam_rename_1subarea(Ensemble *ensemble) {
     Real diameter_cutoff[nmodes];
     Real ln_dia_cutoff[nmodes];
     Real diameter_threshold[nmodes];
-    mam4::AeroSpeciesData<Real> mass_2_vol("mass-to-volume conversion factors");
 
     mam4::rename::find_renaming_pairs(dest_mode_of_mode,    // in
                                       mean_std_dev,         // out
@@ -95,13 +90,16 @@ void mam_rename_1subarea(Ensemble *ensemble) {
       dgnum_amode[m] = mam4::modes(m).nom_diameter;
     }
     //// We use MWs from rename-mam4 for validation proposes
-    mam4::AeroSpeciesData<Real> molecular_weight_rename(
+    mam4::AeroSpeciesData<Real> mass_2_vol("mass-to-volume conversion factors");
+    mam4::AeroSpeciesData<Real, ekat::HostDevice> molecular_weight_rename_h(
         "species molecular weights",
         {150, 115, 150, 12, 58.5, 135, 250092}); // [kg/kmol]
+    auto mass_2_vol_h = mass_2_vol.on_host();
     for (mam4::AeroId aid : mam4::all_aerosol_ids()) {
-      mass_2_vol[aid] =
-          molecular_weight_rename[aid] / aero_species_h[aid].density;
+      mass_2_vol_h[aid] =
+          molecular_weight_rename_h[aid] / aero_species_h[aid].density;
     }
+    mass_2_vol.copy_from_host(mass_2_vol_h);
 
     this_rename.mam_rename_1subarea_(
         mam4_config, iscloudy, smallest_dryvol_value,
@@ -115,8 +113,8 @@ void mam_rename_1subarea(Ensemble *ensemble) {
         diameter_cutoff,      // in
         ln_dia_cutoff,        // in
         diameter_threshold,   // in
-        mass_2_vol,
-        dgnum_amode, // in
+        mass_2_vol,           // in
+        dgnum_amode,          // in
         qnum_cur, qaer_cur, qaer_del_grow4rnam, qnumcw_cur, qaercw_cur,
         qaercw_del_grow4rnam);
 

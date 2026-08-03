@@ -572,7 +572,6 @@ public:
                                 _num_pairs,                 // out
                                 _diameter_cutoff,           // out
                                 _ln_dia_cutoff, _diameter_threshold);
-    auto aero_species_h = aero_species_on_host(aero_config.aero_species);
 
     for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
       _dgnum_amode[imode] = modes(imode).nom_diameter;
@@ -588,7 +587,8 @@ public:
     //     150, 115, 150, 12, 58.5, 135, 250092}; // [kg/kmol]
     // for (int iaero = 0; iaero < AeroConfig::num_aerosol_ids(); ++iaero) {
     //   _mass_2_vol[iaero] =
-    //      molecular_weight_rename[iaero] / aero_species_h(iaero).density;
+    //      molecular_weight_rename[iaero] /
+    //      aero_config.aero_species(iaero).density;
     // }
     // FIXME.
     // Molecular weights (MW) of aerosol species have units of kg/mol,
@@ -599,19 +599,22 @@ public:
 
     _mass_2_vol =
         AeroSpeciesData<Real>("Aerosol mass-to-volume conversion factors");
+    auto mass_2_vol_h = _mass_2_vol.on_host();
+    auto aero_species_h = aero_species_on_host(aero_config.aero_species);
     for (AeroId aid : all_aerosol_ids()) {
-      _mass_2_vol[aid] = aero_species_h[aid].molecular_weight /
-                         aero_species_h[aid].density * unit_factor;
+      mass_2_vol_h[aid] = aero_species_h[aid].molecular_weight /
+                          aero_species_h[aid].density * unit_factor;
     }
 
     // Corrections because of differences in MWs between mam4xx and mam4
-    _mass_2_vol[AeroId::SOA] =
+    mass_2_vol_h[AeroId::SOA] =
         config_._molecular_weight_soa / aero_species_h[AeroId::SO4].density;
-    _mass_2_vol[AeroId::SO4] =
+    mass_2_vol_h[AeroId::SO4] =
         config_._molecular_weight_so4 / aero_species_h[AeroId::SO4].density;
-    _mass_2_vol[AeroId::POM] =
+    mass_2_vol_h[AeroId::POM] =
         config_._molecular_weight_pom / aero_species_h[AeroId::POM].density;
 
+    _mass_2_vol.copy_from_host(mass_2_vol_h);
   } // end(init)
 
   // NOTE: this corresponds to mam_rename_1subarea() in the fortran refactor
@@ -729,8 +732,7 @@ public:
   } // end compute_tendencies()
 
   // Make mam_rename_1subarea public for testing proposes.
-  KOKKOS_INLINE_FUNCTION
-  void mam_rename_1subarea_(
+  KOKKOS_INLINE_FUNCTION void mam_rename_1subarea_(
       const AeroConfig &aero_config, const bool is_cloudy_cur,
       const Real &smallest_dryvol_value,
       const int *dest_mode_of_mode,                             // in
