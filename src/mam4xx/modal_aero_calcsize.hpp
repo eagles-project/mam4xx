@@ -70,6 +70,7 @@ inline void init_calcsize(
   n_common_species_ait_accum = count;
 
   // Set mode parameters.
+  auto aero_species_h = aero_species_on_host(aero_config.aero_species);
   for (int m = 0; m < AeroConfig::num_modes(); ++m) {
     // FIXME: There is a comment in modal_aero_newnuc.F90 that Dick Easter
     // FIXME: thinks that dgnum_aer isn't used in MAM4, but it is actually
@@ -93,7 +94,7 @@ inline void init_calcsize(
     const auto n_spec = num_species_mode(m);
     for (int ispec = 0; ispec < n_spec; ispec++) {
       AeroId aid = mode_aero_species(m, ispec);
-      inv_density[m][ispec] = Real(1.0) / aero_config.aero_species[aid].density;
+      inv_density[m][ispec] = Real(1.0) / aero_species_h[aid].density;
     } // for(ispec)
     // FIXME: do we need to update num2vol_ratio_min_nmodes and
     // num2vol_ratio_max_nmodes as well?
