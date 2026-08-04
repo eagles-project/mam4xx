@@ -42,6 +42,7 @@ KOKKOS_INLINE_FUNCTION void gas_phase_chemistry(
     const Real temp, const Real dt,
     const Real photo_rates[mam4::mo_photo::phtcnt], const Real extfrc[extcnt],
     const Real invariants[nfs], const Real het_rates[gas_pcnst],
+    const Real lat, const Real lon, const int level,
     // out
     VectorType &qq, int &fail_cnt) {
   //=====================================================================
@@ -103,7 +104,8 @@ KOKKOS_INLINE_FUNCTION void gas_phase_chemistry(
   mam4::gas_chemistry::imp_sol(qq,                                      // out
                                reaction_rates, het_rates, extfrc_rates, // in
                                dt, factor,                              // in
-                               epsilon, prod_out, loss_out, fail_cnt);            // out
+                               epsilon, prod_out, loss_out, fail_cnt,   // out
+                               lat, lon, level);                        // in
 
   // save h2so4 change by gas phase chem (for later new particle nucleation)
   if (ndx_h2so4 > 0) {
