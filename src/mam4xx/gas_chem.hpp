@@ -236,7 +236,8 @@ KOKKOS_INLINE_FUNCTION void
 imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
         const Real reaction_rates[rxntot], const Real het_rates[gas_pcnst],
         const Real extfrc[extcnt], const Real &delt, const bool factor[itermax],
-        Real epsilon[clscnt4], Real prod_out[clscnt4], Real loss_out[clscnt4],int &fail_cnt) {
+        Real epsilon[clscnt4], Real prod_out[clscnt4], Real loss_out[clscnt4],
+        int &fail_cnt, const Real lat, const Real lon, const int level) {
 
   constexpr auto clsmap_4 = gas_chemistry::clsmap_4;
   constexpr auto permute_4 = gas_chemistry::permute_4;
@@ -366,12 +367,15 @@ imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
       } else {
         // Non-convergence warning: use Kokkos::printf for GPU-safe output.
         // Species names are not available here; printing species index instead.
-        Kokkos::printf("imp_sol: Failed to converge, dt=%e, time=%e\n", dt,
-                       interval_done + dt);
+        Kokkos::printf(
+            "imp_sol: Failed to converge, lat=%e, lon=%e, level=%d, dt=%e, "
+            "time=%e\n",
+            lat, lon, level, dt, interval_done + dt);
         for (int kk = 0; kk < clscnt4; ++kk) {
           if (!converged[kk]) {
-            Kokkos::printf("  species index %d, max_delta=%e\n", kk,
-                           max_delta[kk]);
+            Kokkos::printf(
+                "  species index %d, max_delta=%e, lat=%e, lon=%e, level=%d\n",
+                kk, max_delta[kk], lat, lon, level);
           }
         }
         // write(iulog,'('' imp_sol: Failed to converge @
@@ -396,7 +400,9 @@ imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
     if (mam4::abs(delt - interval_done) <= 0.0001) {
       if (fail_cnt > 0) {
         // FIXME: probably handle this more gracefully via error logging?
-        Kokkos::printf("ERROR: imp_sol failure @ (lchnk,lev,col) = \n");
+        Kokkos::printf(
+            "ERROR: imp_sol failure @ lat=%e, lon=%e, level=%d\n", lat, lon,
+            level);
         // EKAT_KERNEL_ERROR_MSG("ERROR: imp_sol failure @ (lchnk,lev,col) = \n");
       }
       break;
