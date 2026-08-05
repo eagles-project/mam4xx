@@ -147,8 +147,8 @@ void update_from_explmix(Ensemble *ensemble) {
           int nsav = 0;
           mam4::ndrop::update_from_explmix(
               team, dtmicro, csbot, cldn, zn, zs, ekd, nact, mact, qcld,
-              raercol, raercol_cw, nsav, nnew, nspec_amode, mam_idx, top_lev,
-              overlapp, overlapm, ekkp, ekkm, qncld);
+              raercol, raercol_cw, nsav, nnew, top_lev, overlapp, overlapm,
+              ekkp, ekkm, qncld);
           indexes(0) = nnew;
           indexes(1) = nsav;
         });

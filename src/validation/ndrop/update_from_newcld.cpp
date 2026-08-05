@@ -69,12 +69,8 @@ void update_from_newcld(Ensemble *ensemble) {
               cldn_col_in, cldo_col_in, dtinv, //& ! in
               wtke_col_in, temp_col_in, air_density,
               state_q.data(), //& ! in
-              mam4::AeroConfig::lspectype_amode,
-              mam4::AeroConfig::specdens_amode, mam4::AeroConfig::spechygro,
-              mam4::AeroConfig::lmassptr_amode, num2vol_ratio_min_nmodes,
-              num2vol_ratio_max_nmodes, mam4::AeroConfig::numptr_amode,
-              mam4::AeroConfig::nspec_amode, exp45logsig, alogsig, aten,
-              mam4::AeroConfig::mam_idx, qcld_view[0], raercol_nsav_view,
+              num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes, exp45logsig,
+              alogsig, aten, qcld_view[0], raercol_nsav_view,
               raercol_cw_nsav_view, //&      ! inout
               nsource_col_out_view[0], factnum_col_out_view.data());
         });

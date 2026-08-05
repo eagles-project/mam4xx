@@ -11,12 +11,10 @@ using namespace skywalker;
 void dropmixnuc(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     const Real zero = 0;
-    const int maxd_aspectype = mam4::ndrop::maxd_aspectype;
     const int ntot_amode = mam4::AeroConfig::num_modes();
     const int pcnst = mam4::aero_model::pcnst;
     const int psat = mam4::ndrop::psat;
     const int ncnst_tot = mam4::ndrop::ncnst_tot;
-    const int nspec_max = mam4::ndrop::nspec_max;
 
     const int pver = mam4::ndrop::pver;
 

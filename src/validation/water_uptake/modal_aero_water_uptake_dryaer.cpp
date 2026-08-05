@@ -27,8 +27,6 @@ void modal_aero_water_uptake_dryaer(Ensemble *ensemble) {
     std::vector<Real> specdens_1(mam4::AeroConfig::num_modes(), 0.0);
 
     mam4::water_uptake::modal_aero_water_uptake_dryaer(
-        mam4::AeroConfig::nspec_amode, mam4::AeroConfig::specdens_amode,
-        mam4::AeroConfig::spechygro, mam4::AeroConfig::lspectype_amode,
         state_q.data(), dgncur_a.data(), hygro.data(), naer.data(),
         dryrad.data(), dryvol.data(), drymass.data(), rhcrystal.data(),
         rhdeliques.data(), specdens_1.data());

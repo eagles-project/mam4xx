@@ -78,44 +78,69 @@ public:
   static constexpr int ntot_amode = 4;
   // max number of species in a mode
   static constexpr int nspec_max = 8;
-  static constexpr int nspec_amode[ntot_amode] = {7, 4, 7, 3};
-  static constexpr int numptr_amode[ntot_amode] = {23, 28, 36, 40};
-
-  static constexpr Real specdens_amode[maxd_aspectype] = {
-      0.1770000000E+04, -999.0,           -999.0,           0.1000000000E+04,
-      0.1000000000E+04, 0.1700000000E+04, 0.1900000000E+04, 0.2600000000E+04,
-      0.1601000000E+04, 0.0000000000E+00, 0.0000000000E+00, 0.0000000000E+00,
-      0.0000000000E+00, 0.0000000000E+00};
-  static constexpr Real spechygro[maxd_aspectype] = {
-      0.5070000000E+00, -999.0,           -999.0,           0.1000000083E-09,
-      0.1400000000E+00, 0.1000000013E-09, 0.1160000000E+01, 0.6800000000E-01,
-      0.1000000015E+00, 0.0000000000E+00, 0.0000000000E+00, 0.0000000000E+00,
-      0.0000000000E+00, 0.0000000000E+00};
-
-  static constexpr int lspectype_amode[maxd_aspectype][ntot_amode] = {
-      {1, 1, 8, 4}, {4, 5, 7, 6}, {5, 7, 1, 9}, {6, 9, 6, 0}, {8, 0, 4, 0},
-      {7, 0, 5, 0}, {9, 0, 9, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0},
-      {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
-
-  static constexpr int lmassptr_amode[maxd_aspectype][ntot_amode] = {
-      {16, 24, 29, 37}, {17, 25, 30, 38}, {18, 26, 31, 39}, {19, 27, 32, 0},
-      {20, 0, 33, 0},   {21, 0, 34, 0},   {22, 0, 35, 0},   {0, 0, 0, 0},
-      {0, 0, 0, 0},     {0, 0, 0, 0},     {0, 0, 0, 0},     {0, 0, 0, 0},
-      {0, 0, 0, 0},     {0, 0, 0, 0}};
-
-  static constexpr int mam_idx[ntot_amode][nspec_max] = {
-      {1, 2, 3, 4, 5, 6, 7, 8},
-      {9, 10, 11, 12, 13, 0, 0, 0},
-      {14, 15, 16, 17, 18, 19, 20, 21},
-      {22, 23, 24, 25, 0, 0, 0, 0},
-  };
-
-  static constexpr int mam_cnst_idx[ntot_amode][nspec_max] = {
-      {23, 16, 17, 18, 19, 20, 21, 22},
-      {28, 24, 25, 26, 27, 0, 0, 0},
-      {36, 29, 30, 31, 32, 33, 34, 35},
-      {40, 37, 38, 39, 0, 0, 0, 0},
-  };
+  KOKKOS_INLINE_FUNCTION
+  static constexpr int nspec_amode(const int amode) {
+    const int nspec_amode[ntot_amode] = {7, 4, 7, 3};
+    return nspec_amode[amode];
+  }
+  KOKKOS_INLINE_FUNCTION
+  static constexpr int numptr_amode(const int amode) {
+    const int numptr_amode[ntot_amode] = {23, 28, 36, 40};
+    return numptr_amode[amode];
+  }
+  KOKKOS_INLINE_FUNCTION
+  static constexpr Real specdens_amode(const int aspectype) {
+    const Real specdens_amode[maxd_aspectype] = {
+        0.1770000000E+04, -999.0,           -999.0,           0.1000000000E+04,
+        0.1000000000E+04, 0.1700000000E+04, 0.1900000000E+04, 0.2600000000E+04,
+        0.1601000000E+04, 0.0000000000E+00, 0.0000000000E+00, 0.0000000000E+00,
+        0.0000000000E+00, 0.0000000000E+00};
+    return specdens_amode[aspectype];
+  }
+  KOKKOS_INLINE_FUNCTION
+  static constexpr Real spechygro(const int aspectype) {
+    const Real spechygro[maxd_aspectype] = {
+        0.5070000000E+00, -999.0,           -999.0,           0.1000000083E-09,
+        0.1400000000E+00, 0.1000000013E-09, 0.1160000000E+01, 0.6800000000E-01,
+        0.1000000015E+00, 0.0000000000E+00, 0.0000000000E+00, 0.0000000000E+00,
+        0.0000000000E+00, 0.0000000000E+00};
+    return spechygro[aspectype];
+  }
+  KOKKOS_INLINE_FUNCTION
+  static constexpr int lspectype_amode(const int aspectype, const int amode) {
+    const int lspectype_amode[maxd_aspectype][ntot_amode] = {
+        {1, 1, 8, 4}, {4, 5, 7, 6}, {5, 7, 1, 9}, {6, 9, 6, 0}, {8, 0, 4, 0},
+        {7, 0, 5, 0}, {9, 0, 9, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0},
+        {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
+    return lspectype_amode[aspectype][amode];
+  }
+  KOKKOS_INLINE_FUNCTION
+  static constexpr int lmassptr_amode(const int aspectype, const int amode) {
+    const int lmassptr_amode[maxd_aspectype][ntot_amode] = {
+        {16, 24, 29, 37}, {17, 25, 30, 38}, {18, 26, 31, 39}, {19, 27, 32, 0},
+        {20, 0, 33, 0},   {21, 0, 34, 0},   {22, 0, 35, 0},   {0, 0, 0, 0},
+        {0, 0, 0, 0},     {0, 0, 0, 0},     {0, 0, 0, 0},     {0, 0, 0, 0},
+        {0, 0, 0, 0},     {0, 0, 0, 0}};
+    return lmassptr_amode[aspectype][amode];
+  }
+  KOKKOS_INLINE_FUNCTION
+  static constexpr int mam_idx(const int amode, const int nspec) {
+    const int mam_idx[ntot_amode][nspec_max] = {
+        {1, 2, 3, 4, 5, 6, 7, 8},
+        {9, 10, 11, 12, 13, 0, 0, 0},
+        {14, 15, 16, 17, 18, 19, 20, 21},
+        {22, 23, 24, 25, 0, 0, 0, 0}};
+    return mam_idx[amode][nspec];
+  }
+  KOKKOS_INLINE_FUNCTION
+  static constexpr int mam_cnst_idx(const int amode, const int nspec) {
+    const int mam_cnst_idx[ntot_amode][nspec_max] = {
+        {23, 16, 17, 18, 19, 20, 21, 22},
+        {28, 24, 25, 26, 27, 0, 0, 0},
+        {36, 29, 30, 31, 32, 33, 34, 35},
+        {40, 37, 38, 39, 0, 0, 0, 0}};
+    return mam_cnst_idx[amode][nspec];
+  }
 };
 
 /// MAM4 column-wise prognostic aerosol fields (also used for tendencies).

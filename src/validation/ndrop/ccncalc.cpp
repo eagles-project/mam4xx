@@ -26,8 +26,6 @@ void ccncalc(Ensemble *ensemble) {
 
     const int top_lev = 6;
 
-    const int nspec_max = mam4::ndrop::nspec_max;
-
     using View2D = mam4::ndrop::View2D;
     using View1DHost = typename mam4::HostType::view_1d<Real>;
 
@@ -81,14 +79,10 @@ void ccncalc(Ensemble *ensemble) {
               num2vol_ratio_max_nmodes); // voltonumblo_amode
 
           const auto ccn_k = Kokkos::subview(ccn, kk, Kokkos::ALL());
-          mam4::ndrop::ccncalc(
-              state_q_k.data(), tair(kk), qcldbrn, qcldbrn_num, air_density,
-              mam4::AeroConfig::lspectype_amode,
-              mam4::AeroConfig::specdens_amode, mam4::AeroConfig::spechygro,
-              mam4::AeroConfig::lmassptr_amode, num2vol_ratio_min_nmodes,
-              num2vol_ratio_max_nmodes, mam4::AeroConfig::numptr_amode,
-              mam4::AeroConfig::nspec_amode, exp45logsig, alogsig,
-              ccn_k.data());
+          mam4::ndrop::ccncalc(state_q_k.data(), tair(kk), qcldbrn, qcldbrn_num,
+                               air_density, num2vol_ratio_min_nmodes,
+                               num2vol_ratio_max_nmodes, exp45logsig, alogsig,
+                               ccn_k.data());
         });
 
     auto ccn_host = Kokkos::create_mirror_view(ccn);

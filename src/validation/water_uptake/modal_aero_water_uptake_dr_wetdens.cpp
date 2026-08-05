@@ -32,8 +32,6 @@ void modal_aero_water_uptake_dr_wetdens(Ensemble *ensemble) {
 
     std::vector<Real> wetdens(mam4::AeroConfig::num_modes(), 0.0);
     mam4::water_uptake::modal_aero_water_uptake_dr(
-        mam4::AeroConfig::nspec_amode, mam4::AeroConfig::specdens_amode,
-        mam4::AeroConfig::spechygro, mam4::AeroConfig::lspectype_amode,
         state_q.data(), temperature, pmid, cldn, dgncur_a.data(),
         dgncur_awet.data(), qaerwat.data(), wetdens.data());
 

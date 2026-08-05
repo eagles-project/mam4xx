@@ -93,13 +93,9 @@ void update_from_cldn_profile(Ensemble *ensemble) {
               dz, // ! in
               temp_col_in, air_density, air_density_kp1, csbot_cscen,
               state_q_col_in_kp1.data(), // ! in
-              mam4::AeroConfig::lspectype_amode,
-              mam4::AeroConfig::specdens_amode, mam4::AeroConfig::spechygro,
-              mam4::AeroConfig::lmassptr_amode, num2vol_ratio_min_nmodes,
-              num2vol_ratio_max_nmodes, mam4::AeroConfig::numptr_amode,
-              mam4::AeroConfig::nspec_amode, exp45logsig, alogsig, aten,
-              mam4::AeroConfig::mam_idx, raercol_nsav_view,
-              raercol_nsav_kp1_view, raercol_cw_nsav_view,
+              num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes, exp45logsig,
+              alogsig, aten, raercol_nsav_view, raercol_nsav_kp1_view,
+              raercol_cw_nsav_view,
               nsource_col_view[0], // inout
               qcld_view[0], factnum_col_view.data(),
               ekd_view[0], // out

@@ -13,7 +13,6 @@ void loadaer(Ensemble *ensemble) {
     const Real zero = 0;
     const int ntot_amode = mam4::AeroConfig::num_modes();
     const int maxd_aspectype = mam4::ndrop::maxd_aspectype;
-    const int nspec_max = mam4::ndrop::nspec_max;
 
     const auto state_q = input.get_array("state_q");
     const Real air_density = input.get_array("cs")[0];
@@ -51,13 +50,10 @@ void loadaer(Ensemble *ensemble) {
                             num2vol_ratio_min_nmodes,  // voltonumbhi_amode
                             num2vol_ratio_max_nmodes); // voltonumblo_amode
 
-    mam4::ndrop::loadaer(
-        state_q.data(), mam4::AeroConfig::nspec_amode, air_density, phase,
-        mam4::AeroConfig::lspectype_amode, mam4::AeroConfig::specdens_amode,
-        mam4::AeroConfig::spechygro, mam4::AeroConfig::lmassptr_amode,
-        num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes,
-        mam4::AeroConfig::numptr_amode, qcldbrn, qcldbrn1d_num.data(),
-        naerosol.data(), vaerosol.data(), hygro.data());
+    mam4::ndrop::loadaer(state_q.data(), air_density, phase,
+                         num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes,
+                         qcldbrn, qcldbrn1d_num.data(), naerosol.data(),
+                         vaerosol.data(), hygro.data());
 
     output.set("naerosol", naerosol);
     output.set("vaerosol", vaerosol);

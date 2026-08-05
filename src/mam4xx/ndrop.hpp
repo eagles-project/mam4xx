@@ -41,14 +41,10 @@ constexpr int ncnst_tot = 25;
 constexpr int nspec_max = 8;
 
 KOKKOS_INLINE_FUNCTION
-void get_aer_mmr_sum(
-    const int imode, const int nspec, const Real state_q[aero_model::pcnst],
-    const Real qcldbrn1d[maxd_aspectype],
-    const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
-    const Real specdens_amode[maxd_aspectype],
-    const Real spechygro[maxd_aspectype],
-    const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
-    Real &vaerosolsum_icol, Real &hygrosum_icol) {
+void get_aer_mmr_sum(const int imode, const int nspec,
+                     const Real state_q[aero_model::pcnst],
+                     const Real qcldbrn1d[maxd_aspectype],
+                     Real &vaerosolsum_icol, Real &hygrosum_icol) {
 
   // @param[in] imode  mode index
   // @param[in] nspec  total # of species in mode imode
@@ -65,14 +61,16 @@ void get_aer_mmr_sum(
   // per mode.
   for (int lspec = 0; lspec < nspec; ++lspec) {
     // Fortran indexing to C++
-    const int type_idx = lspectype_amode[lspec][imode] - 1;
+    const int type_idx = AeroConfig::lspectype_amode(lspec, imode) - 1;
     // density at species / mode indices [kg/m3]
-    const Real density_sp = specdens_amode[type_idx]; // species density
+    const Real density_sp =
+        AeroConfig::specdens_amode(type_idx); // species density
     // hygroscopicity at species / mode indices [dimensionless]
-    const Real hygro_sp = spechygro[type_idx]; // species hygroscopicity
+    const Real hygro_sp =
+        AeroConfig::spechygro(type_idx); // species hygroscopicity
     // Fortran indexing to C++
     // index of species in state_q array
-    const int spc_idx = lmassptr_amode[lspec][imode] - 1;
+    const int spc_idx = AeroConfig::lmassptr_amode(lspec, imode) - 1;
     // aerosol volume mixing ratio [m3/kg]
     const Real vol = mam4::max(state_q[spc_idx] + qcldbrn1d[lspec], zero) /
                      density_sp; // volume = mmr/density
@@ -169,16 +167,10 @@ void maxsat(
 } // end maxsat
 
 KOKKOS_INLINE_FUNCTION
-void loadaer(const Real state_q[aero_model::pcnst],
-             const int nspec_amode[AeroConfig::num_modes()], Real air_density,
+void loadaer(const Real state_q[aero_model::pcnst], Real air_density,
              const int phase,
-             const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
-             const Real specdens_amode[maxd_aspectype],
-             const Real spechygro[maxd_aspectype],
-             const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
              const Real voltonumbhi_amode[AeroConfig::num_modes()],
              const Real voltonumblo_amode[AeroConfig::num_modes()],
-             const int numptr_amode[AeroConfig::num_modes()],
              const Real qcldbrn1d[maxd_aspectype][AeroConfig::num_modes()],
              const Real qcldbrn1d_num[AeroConfig::num_modes()],
              Real naerosol[AeroConfig::num_modes()],
@@ -227,15 +219,14 @@ void loadaer(const Real state_q[aero_model::pcnst],
   for (int imode = 0; imode < nmodes; ++imode) {
     Real vaerosolsum = zero;
     Real hygrosum = zero;
-    const Real nspec = AeroConfig::nspec_amode[imode];
+    const Real nspec = AeroConfig::nspec_amode(imode);
 
     for (int ispec = 0; ispec < nspec; ++ispec) {
       qcldbrn1d_imode[ispec] = qcldbrn1d[ispec][imode];
     }
 
-    get_aer_mmr_sum(imode, nspec, state_q, qcldbrn1d_imode, lspectype_amode,
-                    specdens_amode, spechygro, AeroConfig::lmassptr_amode,
-                    vaerosolsum, hygrosum);
+    get_aer_mmr_sum(imode, nspec, state_q, qcldbrn1d_imode, vaerosolsum,
+                    hygrosum);
 
     //  Finalize computation of bulk hygroscopicity and volume conc
     // NOTE: maybe use safe_denominator()?
@@ -249,7 +240,7 @@ void loadaer(const Real state_q[aero_model::pcnst],
 
     // Compute aerosol number concentration
     // Fortran indexing to C++
-    const int num_idx = AeroConfig::numptr_amode[imode] - 1;
+    const int num_idx = AeroConfig::numptr_amode(imode) - 1;
     get_aer_num(voltonumbhi_amode[imode], voltonumblo_amode[imode], num_idx,
                 state_q, air_density, vaerosol[imode], qcldbrn1d_num[imode],
                 naerosol[imode]);
@@ -262,14 +253,8 @@ void ccncalc(const Real state_q[aero_model::pcnst], const Real tair,
              const Real qcldbrn[maxd_aspectype][AeroConfig::num_modes()],
              const Real qcldbrn_num[AeroConfig::num_modes()],
              const Real air_density,
-             const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
-             const Real specdens_amode[maxd_aspectype],
-             const Real spechygro[maxd_aspectype],
-             const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
              const Real voltonumbhi_amode[AeroConfig::num_modes()],
              const Real voltonumblo_amode[AeroConfig::num_modes()],
-             const int numptr_amode[AeroConfig::num_modes()],
-             const int nspec_amode[AeroConfig::num_modes()],
              const Real exp45logsig[AeroConfig::num_modes()],
              const Real alogsig[AeroConfig::num_modes()], Real ccn[psat]) {
 
@@ -335,10 +320,8 @@ void ccncalc(const Real state_q[aero_model::pcnst], const Real tair,
   Real vaerosol[AeroConfig::num_modes()] = {zero};
   Real hygro[AeroConfig::num_modes()] = {zero};
 
-  loadaer(state_q, AeroConfig::nspec_amode, air_density, phase, lspectype_amode,
-          AeroConfig::specdens_amode, spechygro, AeroConfig::lmassptr_amode,
-          voltonumbhi_amode, voltonumblo_amode, numptr_amode, qcldbrn,
-          qcldbrn_num, naerosol, vaerosol, hygro);
+  loadaer(state_q, air_density, phase, voltonumbhi_amode, voltonumblo_amode,
+          qcldbrn, qcldbrn_num, naerosol, vaerosol, hygro);
 
   for (int lsat = 0; lsat < psat; ++lsat) {
     ccn[lsat] = {zero};
@@ -624,23 +607,19 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
 } // activate_modal
 
 KOKKOS_INLINE_FUNCTION
-void get_activate_frac(
-    const Real state_q_kload[aero_model::pcnst], const Real air_density_kload,
-    const Real air_density_kk, const Real wtke,
-    const Real tair, // in
-    const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
-    const Real specdens_amode[maxd_aspectype],
-    const Real spechygro[maxd_aspectype],
-    const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
-    const Real voltonumbhi_amode[AeroConfig::num_modes()],
-    const Real voltonumblo_amode[AeroConfig::num_modes()],
-    const int numptr_amode[AeroConfig::num_modes()],
-    const int nspec_amode[maxd_aspectype],
-    const Real exp45logsig[AeroConfig::num_modes()],
-    const Real alogsig[AeroConfig::num_modes()], const Real aten,
-    Real fn[AeroConfig::num_modes()], Real fm[AeroConfig::num_modes()],
-    Real fluxn[AeroConfig::num_modes()], Real fluxm[AeroConfig::num_modes()],
-    Real &flux_fullact) {
+void get_activate_frac(const Real state_q_kload[aero_model::pcnst],
+                       const Real air_density_kload, const Real air_density_kk,
+                       const Real wtke,
+                       const Real tair, // in
+                       const Real voltonumbhi_amode[AeroConfig::num_modes()],
+                       const Real voltonumblo_amode[AeroConfig::num_modes()],
+                       const Real exp45logsig[AeroConfig::num_modes()],
+                       const Real alogsig[AeroConfig::num_modes()],
+                       const Real aten, Real fn[AeroConfig::num_modes()],
+                       Real fm[AeroConfig::num_modes()],
+                       Real fluxn[AeroConfig::num_modes()],
+                       Real fluxm[AeroConfig::num_modes()],
+                       Real &flux_fullact) {
 
   // input arguments
   //  @param [in] state_q_kload(:)         aerosol mmrs at level from which to
@@ -677,10 +656,8 @@ void get_activate_frac(
   Real hygro[nmodes] = {zero}; // hygroscopicity of aerosol mode [dimensionless]
 
   // load aerosol properties, assuming external mixtures
-  loadaer(state_q_kload, AeroConfig::nspec_amode, air_density_kload, phase,
-          lspectype_amode, specdens_amode, spechygro,
-          AeroConfig::lmassptr_amode, voltonumbhi_amode, voltonumblo_amode,
-          numptr_amode, qcldbrn, qcldbrn_num, naermod, vaerosol, hygro);
+  loadaer(state_q_kload, air_density_kload, phase, voltonumbhi_amode,
+          voltonumblo_amode, qcldbrn, qcldbrn_num, naermod, vaerosol, hygro);
 
   // BAD CONSTANT
   const Real wmax = 10.0;
@@ -699,18 +676,11 @@ void update_from_cldn_profile(
     const Real temp_col_in, const Real air_density, const Real air_density_kp1,
     const Real csbot_cscen,
     const Real state_q_col_in_kp1[aero_model::pcnst], // in
-    const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
-    const Real specdens_amode[maxd_aspectype],
-    const Real spechygro[maxd_aspectype],
-    const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
     const Real voltonumbhi_amode[AeroConfig::num_modes()],
     const Real voltonumblo_amode[AeroConfig::num_modes()],
-    const int numptr_amode[AeroConfig::num_modes()],
-    const int nspec_amode[maxd_aspectype],
     const Real exp45logsig[AeroConfig::num_modes()],
     const Real alogsig[AeroConfig::num_modes()], const Real aten,
-    const int mam_idx[AeroConfig::num_modes()][nspec_max], View1D raercol_nsav,
-    View1D raercol_nsav_kp1, View1D raercol_cw_nsav,
+    View1D raercol_nsav, View1D raercol_nsav_kp1, View1D raercol_cw_nsav,
     Real &nsource_col, // inout
     Real &qcld, Real factnum_col[AeroConfig::num_modes()],
     Real &eddy_diff, // out
@@ -784,14 +754,12 @@ void update_from_cldn_profile(
       Real fluxn[ntot_amode] = {};
       Real flux_fullact = zero;
       // flux of activated aerosol fraction assuming 100% activation [m/s]
-      get_activate_frac(
-          state_q_col_in_kp1, air_density_kp1, air_density, wtke_col_in,
-          temp_col_in, // in
-          lspectype_amode, specdens_amode, spechygro,
-          AeroConfig::lmassptr_amode, voltonumbhi_amode, voltonumblo_amode,
-          numptr_amode, AeroConfig::nspec_amode, exp45logsig, alogsig, aten,
-          factnum_col, fm, fluxn, fluxm, // out
-          flux_fullact);
+      get_activate_frac(state_q_col_in_kp1, air_density_kp1, air_density,
+                        wtke_col_in,
+                        temp_col_in, // in
+                        voltonumbhi_amode, voltonumblo_amode, exp45logsig,
+                        alogsig, aten, factnum_col, fm, fluxn, fluxm, // out
+                        flux_fullact);
 
       //  store for output activation fraction of aerosol
       // factnum_col(kk,:) = fn
@@ -840,7 +808,7 @@ void update_from_cldn_profile(
       for (int imode = 0; imode < ntot_amode; ++imode) {
         // local array index for MAM number, species
         // Fortran indexing to C++ indexing
-        const int mm = AeroConfig::mam_idx[imode][0] - 1;
+        const int mm = AeroConfig::mam_idx(imode, 0) - 1;
         nact[imode] += fluxn[imode] * crdz * delz_cld;
         mact[imode] += fluxm[imode] * crdz * delz_cld;
         // note that kp1 is used here
@@ -865,12 +833,12 @@ void update_from_cldn_profile(
     for (int imode = 0; imode < ntot_amode; ++imode) {
       // local array index for MAM number, species
       // Fortran indexing to C++ indexing
-      int mm = AeroConfig::mam_idx[imode][0] - 1;
+      int mm = AeroConfig::mam_idx(imode, 0) - 1;
       raercol_nsav[mm] += raercol_cw_nsav[mm]; // cloud-borne aerosol
       raercol_cw_nsav[mm] = zero;
 
-      for (int lspec = 1; lspec < AeroConfig::nspec_amode[imode] + 1; ++lspec) {
-        mm = AeroConfig::mam_idx[imode][lspec] - 1;
+      for (int lspec = 1; lspec < AeroConfig::nspec_amode(imode) + 1; ++lspec) {
+        mm = AeroConfig::mam_idx(imode, lspec) - 1;
         raercol_nsav[mm] += raercol_cw_nsav[mm]; // cloud-borne aerosol
         raercol_cw_nsav[mm] = zero;
       }
@@ -880,25 +848,19 @@ void update_from_cldn_profile(
 } // end update_from_cldn_profile
 
 KOKKOS_INLINE_FUNCTION
-void update_from_newcld(
-    const Real cldn_col_in, const Real cldo_col_in,
-    const Real dtinv, // in
-    const Real wtke_col_in, const Real temp_col_in, const Real air_density,
-    const Real state_q_col_in[aero_model::pcnst], // in
-    const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
-    const Real specdens_amode[maxd_aspectype],
-    const Real spechygro[maxd_aspectype],
-    const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
-    const Real voltonumbhi_amode[AeroConfig::num_modes()],
-    const Real voltonumblo_amode[AeroConfig::num_modes()],
-    const int numptr_amode[AeroConfig::num_modes()],
-    const int nspec_amode[maxd_aspectype],
-    const Real exp45logsig[AeroConfig::num_modes()],
-    const Real alogsig[AeroConfig::num_modes()], const Real aten,
-    const int mam_idx[AeroConfig::num_modes()][nspec_max], Real &qcld,
-    View1D raercol_nsav,
-    View1D raercol_cw_nsav, // inout
-    Real &nsource_col_out, Real factnum_col_out[AeroConfig::num_modes()]) {
+void update_from_newcld(const Real cldn_col_in, const Real cldo_col_in,
+                        const Real dtinv, // in
+                        const Real wtke_col_in, const Real temp_col_in,
+                        const Real air_density,
+                        const Real state_q_col_in[aero_model::pcnst], // in
+                        const Real voltonumbhi_amode[AeroConfig::num_modes()],
+                        const Real voltonumblo_amode[AeroConfig::num_modes()],
+                        const Real exp45logsig[AeroConfig::num_modes()],
+                        const Real alogsig[AeroConfig::num_modes()],
+                        const Real aten, Real &qcld, View1D raercol_nsav,
+                        View1D raercol_cw_nsav, // inout
+                        Real &nsource_col_out,
+                        Real factnum_col_out[AeroConfig::num_modes()]) {
 
   // input arguments
   // real(r8), intent(in) :: cldn_col_in       cloud fraction [fraction]
@@ -947,14 +909,14 @@ void update_from_newcld(
 
     for (int imode = 0; imode < ntot_amode; ++imode) {
       // Fortran indexing to C++ indexing
-      const int mm = AeroConfig::mam_idx[imode][0] - 1;
+      const int mm = AeroConfig::mam_idx(imode, 0) - 1;
       // cloud-borne aerosol tendency due to cloud frac tendency [#/kg or kg/kg]
       const Real dact = raercol_cw_nsav[mm] * frac_delt_cld;
       raercol_cw_nsav[mm] += dact; // cloud-borne aerosol
       raercol_nsav[mm] -= dact;
-      for (int lspec = 1; lspec < AeroConfig::nspec_amode[imode] + 1; ++lspec) {
+      for (int lspec = 1; lspec < AeroConfig::nspec_amode(imode) + 1; ++lspec) {
         // Fortran indexing to C++ indexing
-        const int mm = AeroConfig::mam_idx[imode][lspec] - 1;
+        const int mm = AeroConfig::mam_idx(imode, lspec) - 1;
         const Real dact = raercol_cw_nsav[mm] * frac_delt_cld;
         raercol_cw_nsav[mm] += dact; // cloud-borne aerosol
         raercol_nsav[mm] -= dact;
@@ -978,17 +940,15 @@ void update_from_newcld(
 
     get_activate_frac(state_q_col_in, air_density, air_density, wtke_col_in,
                       temp_col_in, // in
-                      lspectype_amode, specdens_amode, spechygro,
-                      lmassptr_amode, voltonumbhi_amode, voltonumblo_amode,
-                      numptr_amode, AeroConfig::nspec_amode, exp45logsig,
+                      voltonumbhi_amode, voltonumblo_amode, exp45logsig,
                       alogsig, aten, factnum_col_out, fm, fluxn, fluxm, // out
                       flux_fullact);
 
     for (int imode = 0; imode < ntot_amode; ++imode) {
       // Fortran indexing to C++ indexing
-      const int mm = AeroConfig::mam_idx[imode][0] - 1;
+      const int mm = AeroConfig::mam_idx(imode, 0) - 1;
       // Fortran indexing to C++ indexing
-      const int num_idx = AeroConfig::numptr_amode[imode] - 1;
+      const int num_idx = AeroConfig::numptr_amode(imode) - 1;
       const Real dact = delt_cld * factnum_col_out[imode] *
                         state_q_col_in[num_idx]; // interstitial only
       qcld += dact;
@@ -998,11 +958,11 @@ void update_from_newcld(
       // fm change from fractional change in cloud fraction [fraction]
       const Real fm_delt_cld = delt_cld * fm[imode];
 
-      for (int lspec = 1; lspec < AeroConfig::nspec_amode[imode] + 1; ++lspec) {
+      for (int lspec = 1; lspec < AeroConfig::nspec_amode(imode) + 1; ++lspec) {
         // Fortran indexing to C++ indexing
-        const int mm = AeroConfig::mam_idx[imode][lspec] - 1;
+        const int mm = AeroConfig::mam_idx(imode, lspec) - 1;
         // Fortran indexing to C++ indexing
-        const int spc_idx = lmassptr_amode[lspec - 1][imode] - 1;
+        const int spc_idx = AeroConfig::lmassptr_amode(lspec - 1, imode) - 1;
         // interstitial only
         const Real dact = fm_delt_cld * state_q_col_in[spc_idx];
         raercol_cw_nsav[mm] += dact; //  cloud-borne aerosol
@@ -1108,8 +1068,7 @@ void update_from_explmix(
     const View3D raercol_cw,
     int &nsav, // indices for old, new time levels in substepping
     int &nnew, // indices for old, new time levels in substepping
-    const int nspec_amode[AeroConfig::num_modes()],
-    const int mam_idx[AeroConfig::num_modes()][nspec_max], const int top_lev,
+    const int top_lev,
     // work vars
     const ColumnView &overlapp, // cloud overlap involving level kk+1 [fraction]
     const ColumnView &overlapm, // cloud overlap involving level kk-1 [fraction]
@@ -1237,7 +1196,7 @@ void update_from_explmix(
           //         srcn(:)=srcn(:)+nact(:,m)*(raercol(:,mm,nsav))
           Real srcn = zero;
           for (int imode = 0; imode < ntot_amode; imode++) {
-            const int mm = AeroConfig::mam_idx[imode][0] - 1;
+            const int mm = AeroConfig::mam_idx(imode, 0) - 1;
             srcn += nact(k, imode) * raercol_kp1_nsav(mm);
             if (k == pver_loc - 1) {
               // rce-comment- new formulation for k=pver
@@ -1263,9 +1222,9 @@ void update_from_explmix(
               explmix(qncld(km1), qncld(k), qncld(kp1), srcn, eddy_diff_kp(k),
                       eddy_diff_km(k), overlapp(k), overlapm(k), dtmix);
           for (int imode = 0; imode < ntot_amode; imode++) {
-            for (int lspec = 0; lspec < AeroConfig::nspec_amode[imode] + 1;
+            for (int lspec = 0; lspec < AeroConfig::nspec_amode(imode) + 1;
                  lspec++) {
-              const int mm = AeroConfig::mam_idx[imode][lspec] - 1;
+              const int mm = AeroConfig::mam_idx(imode, lspec) - 1;
               Real source = 0;
               if (k < pver_loc - 1) {
                 const Real act = lspec ? mact(k, imode) : nact(k, imode);
@@ -1300,13 +1259,13 @@ void update_from_explmix(
 
           // convert activated aerosol to interstitial in decaying cloud
           for (int imode = 0; imode < ntot_amode; imode++) {
-            const int mm = AeroConfig::mam_idx[imode][0] - 1;
+            const int mm = AeroConfig::mam_idx(imode, 0) - 1;
             raercol(k, nnew, mm) += raercol_cw(k, nnew, mm);
             raercol_cw(k, nnew, mm) = zero;
 
-            for (int lspec = 1; lspec < AeroConfig::nspec_amode[imode] + 1;
+            for (int lspec = 1; lspec < AeroConfig::nspec_amode(imode) + 1;
                  lspec++) {
-              const int mm = AeroConfig::mam_idx[imode][lspec] - 1;
+              const int mm = AeroConfig::mam_idx(imode, lspec) - 1;
               raercol(k, nnew, mm) += raercol_cw(k, nnew, mm);
               raercol_cw(k, nnew, mm) = zero;
             } // lspec
@@ -1458,20 +1417,20 @@ void dropmixnuc(
       Kokkos::TeamVectorRange(team, top_lev, pver_loc), [&](int k) {
         for (int imode = 0; imode < ntot_amode; ++imode) {
           // Fortran indexing to C++ indexing
-          const int mm = AeroConfig::mam_idx[imode][0] - 1;
+          const int mm = AeroConfig::mam_idx(imode, 0) - 1;
           raercol_cw(k, nsav, mm) = qqcw_fld(mm, k);
           // Fortran indexing to C++ indexing
-          const int num_idx = AeroConfig::numptr_amode[imode] - 1;
+          const int num_idx = AeroConfig::numptr_amode(imode) - 1;
           raercol(k, nsav, mm) = state_q(k, num_idx);
-          for (int lspec = 1; lspec < AeroConfig::nspec_amode[imode] + 1;
+          for (int lspec = 1; lspec < AeroConfig::nspec_amode(imode) + 1;
                ++lspec) {
             // Fortran indexing to C++ indexing
-            const int mm = AeroConfig::mam_idx[imode][lspec] - 1;
+            const int mm = AeroConfig::mam_idx(imode, lspec) - 1;
 
             raercol_cw(k, nsav, mm) = qqcw_fld(mm, k);
             // Fortran indexing to C++ indexing
             const int spc_idx =
-                AeroConfig::lmassptr_amode[lspec - 1][imode] - 1;
+                AeroConfig::lmassptr_amode(lspec - 1, imode) - 1;
             raercol(k, nsav, mm) = state_q(k, spc_idx);
           } // lspec
         }   // imode
@@ -1492,12 +1451,8 @@ void dropmixnuc(
                            wtke(k), temp(k),
                            conversions::density_of_ideal_gas(temp(k), pmid(k)),
                            state_q_k.data(), // in
-                           AeroConfig::lspectype_amode,
-                           AeroConfig::specdens_amode, AeroConfig::spechygro,
-                           AeroConfig::lmassptr_amode, voltonumbhi_amode,
-                           voltonumblo_amode, AeroConfig::numptr_amode,
-                           AeroConfig::nspec_amode, exp45logsig, alogsig, aten,
-                           AeroConfig::mam_idx, qcld(k),
+                           voltonumbhi_amode, voltonumblo_amode, exp45logsig,
+                           alogsig, aten, qcld(k),
                            ekat::subview(raercol, k, nsav),    // inout
                            ekat::subview(raercol_cw, k, nsav), // inout
                            nsource(k), factnum_k);             // inout
@@ -1527,12 +1482,8 @@ void dropmixnuc(
             conversions::density_of_ideal_gas(temp(kp1), pmid(kp1)),
             csbot_cscen(k),
             state_q_kp1.data(), // in
-            AeroConfig::lspectype_amode, AeroConfig::specdens_amode,
-            AeroConfig::spechygro, AeroConfig::lmassptr_amode,
-            voltonumbhi_amode, voltonumblo_amode, AeroConfig::numptr_amode,
-            AeroConfig::nspec_amode, exp45logsig, alogsig, aten,
-            AeroConfig::mam_idx, ekat::subview(raercol, k, nsav),
-            ekat::subview(raercol, kp1, nsav),
+            voltonumbhi_amode, voltonumblo_amode, exp45logsig, alogsig, aten,
+            ekat::subview(raercol, k, nsav), ekat::subview(raercol, kp1, nsav),
             ekat::subview(raercol_cw, k, nsav),
             nsource(k), // inout
             qcld(k), factnum_k,
@@ -1548,8 +1499,7 @@ void dropmixnuc(
 
   int nnew = 1;
   update_from_explmix(team, dtmicro, csbot, cldn, zn, zs, eddy_diff, nact, mact,
-                      qcld, raercol, raercol_cw, nsav, nnew,
-                      AeroConfig::nspec_amode, AeroConfig::mam_idx, top_lev,
+                      qcld, raercol, raercol_cw, nsav, nnew, top_lev,
                       // work vars
                       overlapp, overlapm, eddy_diff_kp, eddy_diff_km, qncld);
 
@@ -1584,27 +1534,27 @@ void dropmixnuc(
 
         for (int imode = 0; imode < ntot_amode; ++imode) {
           // species index for given mode
-          for (int lspec = 0; lspec < AeroConfig::nspec_amode[imode] + 1;
+          for (int lspec = 0; lspec < AeroConfig::nspec_amode(imode) + 1;
                ++lspec) {
             // local array index for MAM number, species
             // Fortran indexing to C++ indexing
-            const int mm = AeroConfig::mam_idx[imode][lspec] - 1;
+            const int mm = AeroConfig::mam_idx(imode, lspec) - 1;
             // Fortran indexing to C++ indexing
-            const int lptr = AeroConfig::mam_cnst_idx[imode][lspec] - 1;
+            const int lptr = AeroConfig::mam_cnst_idx(imode, lspec) - 1;
             qqcwtend(k) = (raercol_cw(k, nnew, mm) - qqcw_fld(mm, k)) * dtinv;
             qqcw_fld(mm, k) = mam4::max(raercol_cw(k, nnew, mm),
                                         zero); // update cloud-borne aerosol
 
             if (lspec == 0) {
               // Fortran indexing to C++ indexing
-              const int num_idx = AeroConfig::numptr_amode[imode] - 1;
+              const int num_idx = AeroConfig::numptr_amode(imode) - 1;
               raertend(k) =
                   (raercol(k, nnew, mm) - state_q(k, num_idx)) * dtinv;
               qcldbrn_num[imode] = qqcw_fld(mm, k);
             } else {
               // Fortran indexing to C++ indexing
               const int spc_idx =
-                  AeroConfig::lmassptr_amode[lspec - 1][imode] - 1;
+                  AeroConfig::lmassptr_amode(lspec - 1, imode) - 1;
               raertend(k) =
                   (raercol(k, nnew, mm) - state_q(k, spc_idx)) * dtinv;
               // Extract cloud borne MMRs from qqcw pointer
@@ -1627,10 +1577,8 @@ void dropmixnuc(
         // ccn fields.
         ccncalc(state_q_k.data(), temp(k), qcldbrn, qcldbrn_num,
                 conversions::density_of_ideal_gas(temp(k), pmid(k)),
-                AeroConfig::lspectype_amode, AeroConfig::specdens_amode,
-                AeroConfig::spechygro, AeroConfig::lmassptr_amode,
-                voltonumbhi_amode, voltonumblo_amode, AeroConfig::numptr_amode,
-                AeroConfig::nspec_amode, exp45logsig, alogsig, ccn_k.data());
+                voltonumbhi_amode, voltonumblo_amode, exp45logsig, alogsig,
+                ccn_k.data());
       }); // end parfor(k)
   team.team_barrier();
 } // dropmixnuc

@@ -11,10 +11,8 @@ using namespace skywalker;
 void get_activate_frac(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     const Real zero = 0;
-    const int maxd_aspectype = mam4::ndrop::maxd_aspectype;
     const int ntot_amode = mam4::AeroConfig::num_modes();
     const int pcnst = mam4::aero_model::pcnst;
-    const int nspec_max = mam4::ndrop::nspec_max;
 
     const int pver = mam4::ndrop::pver;
     const auto state_q_db = input.get_array("state_q");
@@ -93,13 +91,9 @@ void get_activate_frac(Ensemble *ensemble) {
           mam4::ndrop::get_activate_frac(
               state_q_k.data(), air_density, air_density, wsub(kk),
               tair(kk), // in
-              mam4::AeroConfig::lspectype_amode,
-              mam4::AeroConfig::specdens_amode, mam4::AeroConfig::spechygro,
-              mam4::AeroConfig::lmassptr_amode, num2vol_ratio_min_nmodes,
-              num2vol_ratio_max_nmodes, mam4::AeroConfig::numptr_amode,
-              mam4::AeroConfig::nspec_amode, exp45logsig, alogsig, aten_testing,
-              fn_k.data(), fm_k.data(), fluxn_k.data(), fluxm_k.data(),
-              flux_fullact(kk));
+              num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes, exp45logsig,
+              alogsig, aten_testing, fn_k.data(), fm_k.data(), fluxn_k.data(),
+              fluxm_k.data(), flux_fullact(kk));
         });
 
     auto fn_host = Kokkos::create_mirror_view(fn);

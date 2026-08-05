@@ -83,11 +83,9 @@ void modal_aero_water_uptake_dr_col(Ensemble *ensemble) {
               const auto qaerwat_m_kk =
                   Kokkos::subview(qaerwat, kk, Kokkos::ALL());
               mam4::water_uptake::modal_aero_water_uptake_dr(
-                  mam4::AeroConfig::nspec_amode,
-                  mam4::AeroConfig::specdens_amode, mam4::AeroConfig::spechygro,
-                  mam4::AeroConfig::lspectype_amode, state_q_kk.data(),
-                  temperature(kk), pmid(kk), cldn(kk), dgnumdry_m_kk.data(),
-                  dgnumwet_m_kk.data(), qaerwat_m_kk.data());
+                  state_q_kk.data(), temperature(kk), pmid(kk), cldn(kk),
+                  dgnumdry_m_kk.data(), dgnumwet_m_kk.data(),
+                  qaerwat_m_kk.data());
 
             } // kk
           });
