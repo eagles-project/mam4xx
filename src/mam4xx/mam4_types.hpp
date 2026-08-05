@@ -63,6 +63,15 @@ using ColumnView = ekat::Unmanaged<typename DeviceType::view_1d<Real>>;
 using ConstColumnView =
     ekat::Unmanaged<typename DeviceType::view_1d<const Real>>;
 
+/// An AeroModeView is a rank-1 Kokkos View whose single index indentifies a
+/// quantity associated with a mode, such as a modal number mixing ratio.
+using AeroModeView = typename DeviceType::view_1d<Real>;
+
+/// An AeroModeSpeciesView is a rank-2 Kokkos View that stores quantities
+/// associated with an aerospecies within a mode. The first index identifies
+/// a mode and the second identifies the species within the mode.
+using AeroModeSpeciesView = typename DeviceType::view_2d<Real>;
+
 } // namespace mam4
 
 #endif

@@ -40,13 +40,11 @@ double mmr_from_specific_volume(const AeroSpecies &species,
 
 KOKKOS_INLINE_FUNCTION
 void compute_dryvol_change_in_src_mode(
-    const AeroConfig &aero_config, // in
-    const int *dest_mode_of_mode,  // in
-    const Real q_mmr[AeroConfig::num_modes()]
-                    [AeroConfig::num_aerosol_ids()], // in
-    const Real q_del_growth[AeroConfig::num_modes()]
-                           [AeroConfig::num_aerosol_ids()], // in
-    const AeroSpeciesData<Real> mass_2_vol,                 // in
+    const AeroConfig &aero_config,          // in
+    const int *dest_mode_of_mode,           // in
+    const AeroModeSpeciesView q_mmr,        // in
+    const AeroModeSpeciesView q_del_growth, // in
+    const AeroSpeciesData<Real> mass_2_vol, // in
     Real dryvol[AeroConfig::num_modes()],
     Real deldryvol[AeroConfig::num_modes()] // out
 ) {
@@ -74,9 +72,9 @@ void compute_dryvol_change_in_src_mode(
         int ispec = aerosol_index_for_mode(ModeIndex(m), aid);
         // Multiply by mass_2_vol [m3/kmol-species] to convert
         // q_mmr [kmol-species/kmol-air] to volume units [m3/kmol-air]
-        tmp_dryvol += q_mmr[m][ispec] * mass_2_vol[aid];
+        tmp_dryvol += q_mmr(m, ispec) * mass_2_vol[aid];
         // accumulate the "growth" in volume units as well
-        tmp_del_dryvol += q_del_growth[m][ispec] * mass_2_vol[aid];
+        tmp_del_dryvol += q_del_growth(m, ispec) * mass_2_vol[aid];
       }
 
       // This is dry volume before the growth
@@ -96,10 +94,9 @@ Real total_interstitial_and_cloudborne() {
 // this function determines the total quantity of interest (both interstitial
 // and cloudborne) for a given mode, whether that be number or mixing ratio
 KOKKOS_INLINE_FUNCTION
-Real total_interstitial_and_cloudborne(
-    const bool &is_cloudy, const int &imode,
-    const Real interstitial[AeroConfig::num_modes()],
-    const Real cloudborne[AeroConfig::num_modes()]) {
+Real total_interstitial_and_cloudborne(const bool &is_cloudy, const int &imode,
+                                       const AeroModeView interstitial,
+                                       const AeroModeView cloudborne) {
   // if there is no cloud, total is just the interstitial value
   Real total = interstitial[imode];
   if (is_cloudy) {
@@ -116,11 +113,9 @@ KOKKOS_INLINE_FUNCTION
 void compute_before_growth_dryvol_and_num(
     // in
     const bool &is_cloudy, const int &src_mode,
-    const Real &smallest_dryvol_value,
-    const Real dryvol_i[AeroConfig::num_modes()],
-    const Real dryvol_c[AeroConfig::num_modes()],
-    Real qnum_i_cur[AeroConfig::num_modes()],
-    Real qnum_c_cur[AeroConfig::num_modes()], const Real &num2vol_ratiolo,
+    const Real &smallest_dryvol_value, const AeroModeView dryvol_i,
+    const AeroModeView dryvol_c, const AeroModeView qnum_i_cur,
+    const AeroModeView qnum_c_cur, const Real &num2vol_ratiolo,
     const Real &num2vol_ratiohi,
     // out
     Real &b4_growth_dryvol, Real &b4_growth_dryvol_bounded,
@@ -224,18 +219,18 @@ void do_num_and_mass_transfer(
     const Real xfer_num_frac, // input
     // FIXME: will qmol be updated this way?--verify with unit test
     // aerosol molar mixing ratio [kmol/kmol-dry-air]
-    Real qmol[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
+    AeroModeSpeciesView qmol,
     // aerosol number mixing ratios [#/kmol-air]
-    Real qnum[AeroConfig::num_modes()]) {
+    AeroModeView qnum) {
   // compute changes to number and species masses
-  const Real num_trans = qnum[src_mode] * xfer_num_frac;
-  qnum[src_mode] -= num_trans;
-  qnum[dest_mode] += num_trans;
+  const Real num_trans = qnum(src_mode) * xfer_num_frac;
+  qnum(src_mode) -= num_trans;
+  qnum(dest_mode) += num_trans;
 
   for (int ispec = 0; ispec < AeroConfig::num_aerosol_ids(); ++ispec) {
-    const Real vol_trans = qmol[src_mode][ispec] * xfer_vol_frac;
-    qmol[src_mode][ispec] -= vol_trans;
-    qmol[dest_mode][ispec] += vol_trans;
+    const Real vol_trans = qmol(src_mode, ispec) * xfer_vol_frac;
+    qmol(src_mode, ispec) -= vol_trans;
+    qmol(dest_mode, ispec) += vol_trans;
   }
 } // end do_num_and_mass_transfer
 
@@ -253,15 +248,12 @@ void do_inter_mode_transfer(
     const Real diameter_threshold[AeroConfig::num_modes()],
     const Real dgnum_amode[AeroConfig::num_modes()],
     // dry volume [m3/kmol-air]
-    const Real dryvol_i[AeroConfig::num_modes()],
-    const Real dryvol_c[AeroConfig::num_modes()],
-    const Real deldryvol_i[AeroConfig::num_modes()],
-    const Real deldryvol_c[AeroConfig::num_modes()],
-    Real qmol_i_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
+    const AeroModeView dryvol_i, const AeroModeView dryvol_c,
+    const AeroModeView deldryvol_i, const AeroModeView deldryvol_c,
+    AeroModeSpeciesView qmol_i_cur,
     // aerosol number mixing ratios [#/kmol-air]
-    Real qnum_i_cur[AeroConfig::num_modes()],
-    Real qmol_c_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
-    Real qnum_c_cur[AeroConfig::num_modes()]) {
+    AeroModeView qnum_i_cur, AeroModeSpeciesView qmol_c_cur,
+    AeroModeView qnum_c_cur) {
   // local variables
   const int nmodes = AeroConfig::num_modes();
   int src_mode, dest_mode;
@@ -670,16 +662,21 @@ public:
     // qaercw_del_grow4rnam -> qmol_c_del
     // =======================================================================
 
+    auto qnum_i_cur =
+        config.create_mode_view("interstitial aerosol number mixing ratio");
+    auto qmol_i_cur = config.create_mode_species_view(
+        "interstitial aerosol molar mixing ratio");
+    auto qmol_i_del = config.create_mode_species_view(
+        "interstitial aerosol molar mixing ratio growth");
+
+    auto qnum_c_cur =
+        config.create_mode_view("cloudborne aerosol number mixing ratio");
+    auto qmol_c_cur = config.create_mode_species_view(
+        "cloudborne aerosol molar mixing ratio");
+    auto qmol_c_del = config.create_mode_species_view(
+        "cloudborne aerosol molar mixing ratio growth");
+
     Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int kk) {
-      Real qnum_i_cur[AeroConfig::num_modes()];
-      Real qmol_i_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()];
-      Real qmol_i_del[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()];
-
-      //
-      Real qnum_c_cur[AeroConfig::num_modes()];
-      Real qmol_c_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()];
-      Real qmol_c_del[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()];
-
       const bool &is_cloudy_cur = is_cloudy(kk);
       int rename_idx = 0;
 
@@ -697,13 +694,13 @@ public:
                 aero_species[aero_id].molecular_weight;
 
             // convert mass mixing ratios to molar mixing ratios
-            qmol_i_cur[imode][rename_idx] = conversions::vmr_from_mmr(
+            qmol_i_cur(imode, rename_idx) = conversions::vmr_from_mmr(
                 prognostics.q_aero_i[imode][rename_idx](kk), molecular_weight);
-            qmol_i_del[imode][rename_idx] = conversions::vmr_from_mmr(
+            qmol_i_del(imode, rename_idx) = conversions::vmr_from_mmr(
                 tendencies.q_aero_i[imode][rename_idx](kk), molecular_weight);
-            qmol_c_cur[imode][rename_idx] = conversions::vmr_from_mmr(
+            qmol_c_cur(imode, rename_idx) = conversions::vmr_from_mmr(
                 prognostics.q_aero_c[imode][rename_idx](kk), molecular_weight);
-            qmol_c_del[imode][rename_idx] = conversions::vmr_from_mmr(
+            qmol_c_del(imode, rename_idx) = conversions::vmr_from_mmr(
                 tendencies.q_aero_c[imode][rename_idx](kk), molecular_weight);
           }
         }
@@ -747,18 +744,12 @@ public:
       const Real diameter_threshold[AeroConfig::num_modes()],   // in
       const AeroSpeciesData<Real> &mass_2_vol,                  // in
       const Real dgnum_amode[AeroConfig::num_modes()],          // in
-      Real qnum_i_cur[AeroConfig::num_modes()],                 // out
-      Real qmol_i_cur[AeroConfig::num_modes()]
-                     [AeroConfig::num_aerosol_ids()], // out
-      const Real qmol_i_del[AeroConfig::num_modes()]
-                           [AeroConfig::num_aerosol_ids()], // in
-
-      Real qnum_c_cur[AeroConfig::num_modes()], // out
-      Real qmol_c_cur[AeroConfig::num_modes()]
-                     [AeroConfig::num_aerosol_ids()], // out
-      const Real qmol_c_del[AeroConfig::num_modes()]
-                           [AeroConfig::num_aerosol_ids()]) // in
-
+      AeroModeView qnum_i_cur,                                  // out
+      AeroModeSpeciesView qmol_i_cur,                           // out
+      AeroModeSpeciesView qmol_i_del,                           // in
+      AeroModeView qnum_c_cur,                                  // out
+      AeroModeSpeciesView qmol_c_cur,                           // out
+      AeroModeSpeciesView qmol_c_del)                           // in
       const {
     const Real zero = 0;
     Real dryvol_i[mam4::AeroConfig::num_modes()] = {zero};
