@@ -1326,9 +1326,8 @@ void dropmixnuc(
     const Real voltonumbhi_amode[AeroConfig::num_modes()],
     const Real voltonumblo_amode[AeroConfig::num_modes()],
     const Real exp45logsig[AeroConfig::num_modes()],
-    const Real alogsig[AeroConfig::num_modes()], const Real aten,
-    const bool &, const ColumnView &qcld,
-    const ColumnView &wsub,
+    const Real alogsig[AeroConfig::num_modes()], const Real aten, const bool &,
+    const ColumnView &qcld, const ColumnView &wsub,
     const ColumnView &cldo, // in
     const View2D qqcw_fld,  // inout
     const View2D ptend_q, const ColumnView &tendnd, const View2D &factnum,
