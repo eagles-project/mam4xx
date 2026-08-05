@@ -1178,8 +1178,7 @@ void update_from_explmix(
     int &nsav, // indices for old, new time levels in substepping
     int &nnew, // indices for old, new time levels in substepping
     const int nspec_amode[AeroConfig::num_modes()],
-    const int mam_idx[AeroConfig::num_modes()][nspec_max],
-    const bool &enable_aero_vertical_mix, const int top_lev,
+    const int mam_idx[AeroConfig::num_modes()][nspec_max], const int top_lev,
     // work vars
     const ColumnView &overlapp, // cloud overlap involving level kk+1 [fraction]
     const ColumnView &overlapm, // cloud overlap involving level kk-1 [fraction]
@@ -1329,11 +1328,9 @@ void update_from_explmix(
           //    terms
           // rce-comment: activation source in layer k involves particles from
           // k+1 source(:)= mact(:,m)*(raercol(:,mm,nsav))
-          if (enable_aero_vertical_mix) {
-            qcld(k) =
-                explmix(qncld(km1), qncld(k), qncld(kp1), srcn, eddy_diff_kp(k),
-                        eddy_diff_km(k), overlapp(k), overlapm(k), dtmix);
-          }
+          qcld(k) =
+              explmix(qncld(km1), qncld(k), qncld(kp1), srcn, eddy_diff_kp(k),
+                      eddy_diff_km(k), overlapp(k), overlapm(k), dtmix);
           for (int imode = 0; imode < ntot_amode; imode++) {
             for (int lspec = 0; lspec < nspec_amode[imode] + 1; lspec++) {
               const int mm = mam_idx[imode][lspec] - 1;
@@ -1351,13 +1348,11 @@ void update_from_explmix(
                   explmix(raercol_cw_km1_nsav(mm), raercol_cw_k_nsav(mm),
                           raercol_cw_kp1_nsav(mm), source, eddy_diff_kp(k),
                           eddy_diff_km(k), overlapp(k), overlapm(k), dtmix);
-              if (enable_aero_vertical_mix) {
-                raercol_k_nnew(mm) =
-                    explmix(raercol_km1_nsav(mm), raercol_k_nsav(mm),
-                            raercol_kp1_nsav(mm), source, eddy_diff_kp(k),
-                            eddy_diff_km(k), overlapp(k), overlapm(k), dtmix,
-                            raercol_cw_km1_nsav(mm), raercol_cw_kp1_nsav(mm));
-              }
+              raercol_k_nnew(mm) =
+                  explmix(raercol_km1_nsav(mm), raercol_k_nsav(mm),
+                          raercol_kp1_nsav(mm), source, eddy_diff_kp(k),
+                          eddy_diff_km(k), overlapp(k), overlapm(k), dtmix,
+                          raercol_cw_km1_nsav(mm), raercol_cw_kp1_nsav(mm));
             } // lspec loop
           }   // imode loop
         });   // k loop
@@ -1406,9 +1401,8 @@ void dropmixnuc(
     const Real exp45logsig[AeroConfig::num_modes()],
     const Real alogsig[AeroConfig::num_modes()], const Real aten,
     const int mam_idx[AeroConfig::num_modes()][nspec_max],
-    const int mam_cnst_idx[AeroConfig::num_modes()][nspec_max],
-    const bool &enable_aero_vertical_mix, const ColumnView &qcld,
-    const ColumnView &wsub,
+    const int mam_cnst_idx[AeroConfig::num_modes()][nspec_max], const bool &,
+    const ColumnView &qcld, const ColumnView &wsub,
     const ColumnView &cldo, // in
     const View2D qqcw_fld,  // inout
     const View2D ptend_q, const ColumnView &tendnd, const View2D &factnum,
@@ -1624,7 +1618,7 @@ void dropmixnuc(
   int nnew = 1;
   update_from_explmix(team, dtmicro, csbot, cldn, zn, zs, eddy_diff, nact, mact,
                       qcld, raercol, raercol_cw, nsav, nnew, nspec_amode,
-                      mam_idx, enable_aero_vertical_mix, top_lev,
+                      mam_idx, top_lev,
                       // work vars
                       overlapp, overlapm, eddy_diff_kp, eddy_diff_km, qncld);
 
