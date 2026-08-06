@@ -45,8 +45,8 @@ void compute_dryvol_change_in_src_mode(
     const AeroModeSpeciesView q_mmr,        // in
     const AeroModeSpeciesView q_del_growth, // in
     const AeroSpeciesData<Real> mass_2_vol, // in
-    Real dryvol[AeroConfig::num_modes()],
-    Real deldryvol[AeroConfig::num_modes()] // out
+    const AeroModeView dryvol,              // out
+    const AeroModeView deldryvol            // out
 ) {
   const Real zero = 0;
   for (int m = 0; m < aero_config.num_modes(); ++m) {
@@ -662,19 +662,13 @@ public:
     // qaercw_del_grow4rnam -> qmol_c_del
     // =======================================================================
 
-    auto qnum_i_cur =
-        config.create_mode_view("interstitial aerosol number mixing ratio");
-    auto qmol_i_cur = config.create_mode_species_view(
-        "interstitial aerosol molar mixing ratio");
-    auto qmol_i_del = config.create_mode_species_view(
-        "interstitial aerosol molar mixing ratio growth");
+    auto qnum_i_cur = config.create_mode_view(team);
+    auto qmol_i_cur = config.create_mode_species_view(team);
+    auto qmol_i_del = config.create_mode_species_view(team);
 
-    auto qnum_c_cur =
-        config.create_mode_view("cloudborne aerosol number mixing ratio");
-    auto qmol_c_cur = config.create_mode_species_view(
-        "cloudborne aerosol molar mixing ratio");
-    auto qmol_c_del = config.create_mode_species_view(
-        "cloudborne aerosol molar mixing ratio growth");
+    auto qnum_c_cur = config.create_mode_view(team);
+    auto qmol_c_cur = config.create_mode_species_view(team);
+    auto qmol_c_del = config.create_mode_species_view(team);
 
     Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int kk) {
       const bool &is_cloudy_cur = is_cloudy(kk);
@@ -706,7 +700,7 @@ public:
         }
       }
 
-      mam_rename_1subarea_(config, is_cloudy_cur, smallest_dryvol_value,
+      mam_rename_1subarea_(config, team, is_cloudy_cur, smallest_dryvol_value,
                            dest_mode_of_mode,                  // in
                            mean_std_dev,                       // in
                            fmode_dist_tail_fac,                // in
@@ -730,8 +724,8 @@ public:
 
   // Make mam_rename_1subarea public for testing proposes.
   KOKKOS_INLINE_FUNCTION void mam_rename_1subarea_(
-      const AeroConfig &aero_config, const bool is_cloudy_cur,
-      const Real &smallest_dryvol_value,
+      const AeroConfig &aero_config, const ThreadTeam &team,
+      const bool is_cloudy_cur, const Real &smallest_dryvol_value,
       const int *dest_mode_of_mode,                             // in
       const Real mean_std_dev[AeroConfig::num_modes()],         // in
       const Real fmode_dist_tail_fac[AeroConfig::num_modes()],  // in
@@ -751,9 +745,11 @@ public:
       AeroModeSpeciesView qmol_c_cur,                           // out
       AeroModeSpeciesView qmol_c_del)                           // in
       const {
-    const Real zero = 0;
-    Real dryvol_i[mam4::AeroConfig::num_modes()] = {zero};
-    Real deldryvol_i[mam4::AeroConfig::num_modes()] = {zero};
+
+    auto dryvol_i = aero_config.create_mode_view(team);
+    auto deldryvol_i = aero_config.create_mode_view(team);
+    auto dryvol_c = aero_config.create_mode_view(team);
+    auto deldryvol_c = aero_config.create_mode_view(team);
 
     // Interstitial aerosols: Compute initial (before growth) aerosol dry
     // volume and also the growth in dry volume of the "src" mode
@@ -766,9 +762,6 @@ public:
                                               dryvol_i,          // out
                                               deldryvol_i        // out
     );
-
-    Real dryvol_c[mam4::AeroConfig::num_modes()] = {zero};
-    Real deldryvol_c[mam4::AeroConfig::num_modes()] = {zero};
 
     if (is_cloudy_cur) {
 

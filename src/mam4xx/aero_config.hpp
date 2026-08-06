@@ -158,20 +158,23 @@ public:
     EKAT_KERNEL_ASSERT(0 <= nspec && nspec < nspec_max());
     return mam_cnst_idx[amode][nspec];
 
-  /// Creates a view that can store a quantity associated with each aerosol
-  /// mode.
-  inline AeroModeView
-  create_mode_view(const std::string &label = "mode view") const {
-    AeroModeView v(label, num_modes());
+  /// Creates a temporary scratch view in High-Bandwidth Memory (provided by the
+  /// given team) that can store a quantity associated with each aerosol mode.
+  KOKKOS_INLINE_FUNCTION
+  AeroModeView create_mode_view(const ThreadTeam &team) const {
+    size_t mode_size = sizeof(Real) * num_modes();
+    AeroModeView v(team.team_scratch(1), num_modes(), mode_size);
     Kokkos::deep_copy(v, 0.0);
     return v;
   }
 
-  /// Creates a view that can store a quantity associated with each aerosol
-  /// species in each mode.
-  inline AeroModeSpeciesView create_mode_species_view(
-      const std::string &label = "mode species view") const {
-    AeroModeSpeciesView v(label, num_modes(), num_aerosol_ids());
+  /// Creates a temporary scratch view in High-Bandwidth Memory (provided by the
+  /// given team) that can store a quantity associated with each aerosol species
+  /// in each mode.
+  KOKKOS_INLINE_FUNCTION
+  AeroModeSpeciesView create_mode_species_view(const ThreadTeam &team) const {
+    size_t mode_species_size = sizeof(Real) * num_modes() * num_aerosol_ids();
+    AeroModeSpeciesView v(team.team_scratch(1), num_modes(), num_aerosol_ids());
     Kokkos::deep_copy(v, 0.0);
     return v;
   }
