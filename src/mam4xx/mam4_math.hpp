@@ -39,6 +39,9 @@ KOKKOS_INLINE_FUNCTION Real cube(const Real x) { return x * x * x; }
 KOKKOS_INLINE_FUNCTION constexpr Real epsilon() {
   return Kokkos::Experimental::epsilon_v<Real>;
 }
+KOKKOS_FUNCTION template <typename T> constexpr T epsilon() {
+  return Kokkos::Experimental::epsilon_v<T>;
+}
 
 } // namespace mam4
 

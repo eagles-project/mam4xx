@@ -25,7 +25,7 @@ void update_from_cldn_profile(Ensemble *ensemble) {
     const Real air_density = input.get_array("cs_col_in_kk")[0];
     const Real air_density_kp1 = input.get_array("cs_col_in_kp1")[0];
 
-    const auto state_q_col_in_kp1 = input.get_array("state_q_col_in_kp1");
+    auto state_q_col_in_kp1 = input.get_array("state_q_col_in_kp1");
     Real qcld = input.get_array("qcld")[0];
 
     Real exp45logsig[mam4::AeroConfig::num_modes()],
@@ -86,13 +86,18 @@ void update_from_cldn_profile(Ensemble *ensemble) {
     View1D mact_view("mact_view", ntot_amode);
     Kokkos::deep_copy(mact_view, mact_host);
 
+    const int pcnst = mam4::aero_model::pcnst;
+    View1DHost state_q_col_in_kp1_host(state_q_col_in_kp1.data(), pcnst);
+    View1D state_q_col_in_kp1_view("state_q_col_in_kp1_view", pcnst);
+    Kokkos::deep_copy(state_q_col_in_kp1_view, state_q_col_in_kp1_host);
+
     Kokkos::parallel_for(
         "update_from_cldn_profile", 1, KOKKOS_LAMBDA(int) {
           mam4::ndrop::update_from_cldn_profile(
               cldn_col_in, cldn_col_in_kp1, dtinv, wtke_col_in, zs,
               dz, // ! in
               temp_col_in, air_density, air_density_kp1, csbot_cscen,
-              state_q_col_in_kp1.data(), // ! in
+              state_q_col_in_kp1_view.data(), // ! in
               num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes, exp45logsig,
               alogsig, aten, raercol_nsav_view, raercol_nsav_kp1_view,
               raercol_cw_nsav_view,

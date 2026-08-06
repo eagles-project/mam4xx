@@ -8,6 +8,7 @@
 
 #include "aero_species.hpp"
 #include "mam4_types.hpp"
+#include <ekat_kernel_assert.hpp>
 
 namespace mam4 {
 
@@ -86,6 +87,7 @@ public:
   KOKKOS_INLINE_FUNCTION
   static constexpr int numptr_amode(const int amode) {
     const int numptr_amode[ntot_amode] = {23, 28, 36, 40};
+    EKAT_KERNEL_ASSERT(0 <= amode && amode < ntot_amode);
     return numptr_amode[amode];
   }
   KOKKOS_INLINE_FUNCTION
@@ -95,6 +97,7 @@ public:
         0.1000000000E+04, 0.1700000000E+04, 0.1900000000E+04, 0.2600000000E+04,
         0.1601000000E+04, 0.0000000000E+00, 0.0000000000E+00, 0.0000000000E+00,
         0.0000000000E+00, 0.0000000000E+00};
+    EKAT_KERNEL_ASSERT(0 <= aspectype && aspectype < maxd_aspectype);
     return specdens_amode[aspectype];
   }
   KOKKOS_INLINE_FUNCTION
@@ -104,6 +107,7 @@ public:
         0.1400000000E+00, 0.1000000013E-09, 0.1160000000E+01, 0.6800000000E-01,
         0.1000000015E+00, 0.0000000000E+00, 0.0000000000E+00, 0.0000000000E+00,
         0.0000000000E+00, 0.0000000000E+00};
+    EKAT_KERNEL_ASSERT(0 <= aspectype && aspectype < maxd_aspectype);
     return spechygro[aspectype];
   }
   KOKKOS_INLINE_FUNCTION
@@ -112,6 +116,8 @@ public:
         {1, 1, 8, 4}, {4, 5, 7, 6}, {5, 7, 1, 9}, {6, 9, 6, 0}, {8, 0, 4, 0},
         {7, 0, 5, 0}, {9, 0, 9, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0},
         {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
+    EKAT_KERNEL_ASSERT(0 <= aspectype && aspectype < maxd_aspectype);
+    EKAT_KERNEL_ASSERT(0 <= amode && amode < ntot_amode);
     return lspectype_amode[aspectype][amode];
   }
   KOKKOS_INLINE_FUNCTION
@@ -121,6 +127,8 @@ public:
         {20, 0, 33, 0},   {21, 0, 34, 0},   {22, 0, 35, 0},   {0, 0, 0, 0},
         {0, 0, 0, 0},     {0, 0, 0, 0},     {0, 0, 0, 0},     {0, 0, 0, 0},
         {0, 0, 0, 0},     {0, 0, 0, 0}};
+    EKAT_KERNEL_ASSERT(0 <= aspectype && aspectype < maxd_aspectype);
+    EKAT_KERNEL_ASSERT(0 <= amode && amode < ntot_amode);
     return lmassptr_amode[aspectype][amode];
   }
   KOKKOS_INLINE_FUNCTION
@@ -130,6 +138,8 @@ public:
         {9, 10, 11, 12, 13, 0, 0, 0},
         {14, 15, 16, 17, 18, 19, 20, 21},
         {22, 23, 24, 25, 0, 0, 0, 0}};
+    EKAT_KERNEL_ASSERT(0 <= amode && amode < ntot_amode);
+    EKAT_KERNEL_ASSERT(0 <= nspec && nspec < nspec_max);
     return mam_idx[amode][nspec];
   }
   KOKKOS_INLINE_FUNCTION
@@ -139,6 +149,8 @@ public:
         {28, 24, 25, 26, 27, 0, 0, 0},
         {36, 29, 30, 31, 32, 33, 34, 35},
         {40, 37, 38, 39, 0, 0, 0, 0}};
+    EKAT_KERNEL_ASSERT(0 <= amode && amode < ntot_amode);
+    EKAT_KERNEL_ASSERT(0 <= nspec && nspec < nspec_max);
     return mam_cnst_idx[amode][nspec];
   }
 };
