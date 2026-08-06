@@ -74,16 +74,6 @@ void modal_aero_water_uptake_dr_col(Ensemble *ensemble) {
       Kokkos::parallel_for(
           team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
             for (int kk = top_lev; kk < pver; ++kk) {
-
-              int nspec_amode[mam4::AeroConfig::num_modes()];
-              int lspectype_amode[mam4::water_uptake::maxd_aspectype]
-                                 [mam4::AeroConfig::num_modes()];
-              Real specdens_amode[mam4::water_uptake::maxd_aspectype];
-              Real spechygro[mam4::water_uptake::maxd_aspectype];
-
-              mam4::water_uptake::get_e3sm_parameters(
-                  nspec_amode, lspectype_amode, specdens_amode, spechygro);
-
               const auto state_q_kk =
                   Kokkos::subview(state_q, kk, Kokkos::ALL());
               const auto dgnumdry_m_kk =
@@ -93,7 +83,6 @@ void modal_aero_water_uptake_dr_col(Ensemble *ensemble) {
               const auto qaerwat_m_kk =
                   Kokkos::subview(qaerwat, kk, Kokkos::ALL());
               mam4::water_uptake::modal_aero_water_uptake_dr(
-                  nspec_amode, specdens_amode, spechygro, lspectype_amode,
                   state_q_kk.data(), temperature(kk), pmid(kk), cldn(kk),
                   dgnumdry_m_kk.data(), dgnumwet_m_kk.data(),
                   qaerwat_m_kk.data());

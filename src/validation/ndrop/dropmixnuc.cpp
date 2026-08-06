@@ -11,12 +11,10 @@ using namespace skywalker;
 void dropmixnuc(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     const Real zero = 0;
-    const int maxd_aspectype = mam4::ndrop::maxd_aspectype;
     const int ntot_amode = mam4::AeroConfig::num_modes();
     const int pcnst = mam4::aero_model::pcnst;
     const int psat = mam4::ndrop::psat;
     const int ncnst_tot = mam4::ndrop::ncnst_tot;
-    const int nspec_max = mam4::ndrop::nspec_max;
 
     const int pver = mam4::ndrop::pver;
 
@@ -172,19 +170,6 @@ void dropmixnuc(Ensemble *ensemble) {
     auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
-          int nspec_amode[ntot_amode];
-          int lspectype_amode[maxd_aspectype][ntot_amode];
-          int lmassptr_amode[maxd_aspectype][ntot_amode];
-          Real specdens_amode[maxd_aspectype];
-          Real spechygro[maxd_aspectype];
-          int numptr_amode[ntot_amode];
-          int mam_idx[ntot_amode][nspec_max];
-          int mam_cnst_idx[ntot_amode][nspec_max];
-
-          mam4::ndrop::get_e3sm_parameters(
-              nspec_amode, lspectype_amode, lmassptr_amode, numptr_amode,
-              specdens_amode, spechygro, mam_idx, mam_cnst_idx);
-
           Real exp45logsig[mam4::AeroConfig::num_modes()],
               alogsig[mam4::AeroConfig::num_modes()],
               num2vol_ratio_min_nmodes[mam4::AeroConfig::num_modes()],
@@ -201,10 +186,8 @@ void dropmixnuc(Ensemble *ensemble) {
               zm, //  ! in zm[kk] - zm[kk+1], for pver zm[kk-1] - zm[kk]
               state_q, ncldwtr,
               kvh, // kvh[kk+1]
-              cldn, lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
-              num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes, numptr_amode,
-              nspec_amode, exp45logsig, alogsig, aten, mam_idx, mam_cnst_idx,
-              true,
+              cldn, num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes,
+              exp45logsig, alogsig, aten, true,
               qcld, //
               wsub,
               cldo, // in

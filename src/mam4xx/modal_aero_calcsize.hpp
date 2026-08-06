@@ -109,16 +109,7 @@ inline void init_calcsize(
 
 struct CalcsizeData {
 
-  int nspec_amode[AeroConfig::num_modes()];
-  int lspectype_amode[ndrop::maxd_aspectype][AeroConfig::num_modes()];
-  Real specdens_amode[ndrop::maxd_aspectype];
-  int lmassptr_amode[ndrop::maxd_aspectype][AeroConfig::num_modes()];
-  Real spechygro[ndrop::maxd_aspectype];
   Real mean_std_dev_nmodes[AeroConfig::num_modes()];
-
-  int numptr_amode[AeroConfig::num_modes()];
-  int mam_idx[AeroConfig::num_modes()][ndrop::nspec_max];
-  int mam_cnst_idx[AeroConfig::num_modes()][ndrop::nspec_max];
 
   // FIXME: inv_density: we have different order of species in mam4xx.
   Real inv_density[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()] = {};
@@ -140,10 +131,6 @@ struct CalcsizeData {
   bool update_mmr = false;
 
   void initialize() {
-    ndrop::get_e3sm_parameters(nspec_amode, lspectype_amode, lmassptr_amode,
-                               numptr_amode, specdens_amode, spechygro, mam_idx,
-                               mam_cnst_idx);
-
     init_calcsize(default_aero_species(), inv_density, num2vol_ratio_min,
                   num2vol_ratio_max, num2vol_ratio_max_nmodes,
                   num2vol_ratio_min_nmodes, num2vol_ratio_nom_nmodes,
@@ -169,7 +156,6 @@ KOKKOS_INLINE_FUNCTION void compute_coef_acc_ait_transfer(
                           [AeroConfig::num_aerosol_ids()],
     const Real num2vol_ratio_max_nmodes[AeroConfig::num_modes()],
     // additional parameters
-    const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
     Real &drv_i_noxf, Real &drv_c_noxf, int &acc2_ait_index,
     Real &xfercoef_num_acc2ait, Real &xfercoef_vol_acc2ait,
     Real xfertend_num[2][2]) {
@@ -207,7 +193,7 @@ KOKKOS_INLINE_FUNCTION void compute_coef_acc_ait_transfer(
           // need qmass*invdens = (kg/kg-air) * [1/(kg/m3)] = m3/kg-air
           ; // !get mmr
           // Fortran to C++ indexing
-          const int idx = lmassptr_amode[ispec][iacc] - 1;
+          const int idx = AeroConfig::lmassptr_amode(ispec, iacc);
           drv_i_noxf +=
               mam4::max(zero, state_q[idx]) * inv_density[iacc][ispec];
           drv_c_noxf += mam4::max(zero, qqcw[idx]) * inv_density[iacc][ispec];
@@ -418,15 +404,14 @@ KOKKOS_INLINE_FUNCTION void size_adjustment(
 
 } /// size_adjustment
 template <typename VectorType>
-KOKKOS_INLINE_FUNCTION void compute_dry_volume(
-    int imode,                 // in
-    const VectorType &state_q, // in
-    const VectorType &qqcw,    // in
-    const Real inv_density[AeroConfig::num_modes()]
-                          [AeroConfig::num_aerosol_ids()], // in
-    const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
-    Real &dryvol_i, // out
-    Real &dryvol_c) // out
+KOKKOS_INLINE_FUNCTION void
+compute_dry_volume(int imode,                 // in
+                   const VectorType &state_q, // in
+                   const VectorType &qqcw,    // in
+                   const Real inv_density[AeroConfig::num_modes()]
+                                         [AeroConfig::num_aerosol_ids()], // in
+                   Real &dryvol_i,                                        // out
+                   Real &dryvol_c)                                        // out
 {
   constexpr Real zero = 0.0;
   dryvol_i = zero;
@@ -435,7 +420,7 @@ KOKKOS_INLINE_FUNCTION void compute_dry_volume(
   const auto n_spec = num_species_mode(imode);
   for (int ispec = 0; ispec < n_spec; ispec++) {
     // Fortran to C++ indexing
-    const int idx = lmassptr_amode[ispec][imode] - 1;
+    const int idx = AeroConfig::lmassptr_amode(ispec, imode);
     dryvol_i += mam4::max(zero, state_q[idx]) * inv_density[imode][ispec];
     dryvol_c += mam4::max(zero, qqcw[idx]) * inv_density[imode][ispec];
   } // end ispec
@@ -582,9 +567,8 @@ KOKKOS_INLINE_FUNCTION void aitken_accum_exchange(
       accum_idx, num2vol_ratio_geomean, adj_tscale_inv, state_q, qqcw,
       drv_i_accsv, drv_c_accsv, num_i_accsv, num_c_accsv,
       calcsizedata.noxf_acc2ait, voltonum_ait, calcsizedata.inv_density,
-      calcsizedata.num2vol_ratio_max_nmodes, calcsizedata.lmassptr_amode,
-      drv_i_noxf, drv_c_noxf, acc2_ait_index, xfercoef_num_acc2ait,
-      xfercoef_vol_acc2ait, xfertend_num);
+      calcsizedata.num2vol_ratio_max_nmodes, drv_i_noxf, drv_c_noxf,
+      acc2_ait_index, xfercoef_num_acc2ait, xfercoef_vol_acc2ait, xfertend_num);
 
   // jump to end of loop if no transfer is needed
   if (ait2acc_index + acc2_ait_index > 0) {
@@ -870,8 +854,7 @@ modal_aero_calcsize_sub(const VectorType &state_q, // in
                        state_q,                  // in
                        qqcw,                     // in
                        calcsizedata.inv_density, // in
-                       calcsizedata.lmassptr_amode,
-                       dryvol_i, // out
+                       dryvol_i,                 // out
                        dryvol_c);
 
     // do size adjustment based on computed dry diameter values and update the
@@ -881,10 +864,10 @@ modal_aero_calcsize_sub(const VectorType &state_q, // in
     // Both num_mode_idx and num_cldbrn_mode_idx should be exactly same and
     // should be same for both prognostic and diagnostic radiation lists
     // Fortran to C++ indexing
-    const int num_mode_idx = calcsizedata.numptr_amode[imode] - 1;
+    const int num_mode_idx = AeroConfig::numptr_amode(imode);
     // Fortran to C++ indexing
     const int num_cldbrn_mode_idx =
-        calcsizedata.numptr_amode[imode] - 1;         // numptrcw_amode[imode];
+        AeroConfig::numptr_amode(imode);              // numptrcw_amode[imode];
     const Real n_i_imode = state_q[num_mode_idx];     // from state_q
     const Real n_c_imode = qqcw[num_cldbrn_mode_idx]; // from qqcw
     // const bool update_mmr

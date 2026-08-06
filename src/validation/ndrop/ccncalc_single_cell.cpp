@@ -43,12 +43,6 @@ void ccncalc_single_cell(Ensemble *ensemble) {
     }
     const Real air_density = input.get_array("cs")[0];
 
-    const auto specdens_amode_db = input.get_array("specdens_amode");
-    const auto spechygro_db = input.get_array("spechygro");
-
-    const auto specdens_amode = specdens_amode_db.data();
-    const auto spechygro = spechygro_db.data();
-
     const auto numptr_amode_db = input.get_array("numptr_amode");
     const auto nspec_amode_db = input.get_array("nspec_amode");
 
@@ -71,10 +65,9 @@ void ccncalc_single_cell(Ensemble *ensemble) {
     }
     std::vector<Real> ccn(psat, zero);
     mam4::ndrop::ccncalc(state_q.data(), tair, qcldbrn, qcldbrn_num.data(),
-                         air_density, lspectype_amode, specdens_amode,
-                         spechygro, lmassptr_amode, num2vol_ratio_min_nmodes,
-                         num2vol_ratio_max_nmodes, numptr_amode, nspec_amode,
-                         exp45logsig, alogsig, ccn.data());
+                         air_density, num2vol_ratio_min_nmodes,
+                         num2vol_ratio_max_nmodes, exp45logsig, alogsig,
+                         ccn.data());
 
     output.set("ccn", ccn);
   });

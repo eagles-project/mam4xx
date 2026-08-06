@@ -60,12 +60,6 @@ void calculate_hetfrz_immersion_nucleation(Ensemble *ensemble) {
       exit(1);
     }
 
-    if (!input.has("eswtr")) {
-      std::cerr << "Required name: "
-                << "eswtr" << std::endl;
-      exit(1);
-    }
-
     if (!input.has("vwice")) {
       std::cerr << "Required name: "
                 << "vwice" << std::endl;
@@ -136,7 +130,6 @@ void calculate_hetfrz_immersion_nucleation(Ensemble *ensemble) {
     auto dim_theta = input.get_array("dim_theta");
     auto pdf_imm_theta = input.get_array("pdf_imm_theta");
     auto sigma_iw = input.get("sigma_iw");
-    auto eswtr = input.get("eswtr");
     auto vwice = input.get("vwice");
     auto r_bc = input.get("r_bc");
     auto r_dust_a1 = input.get("r_dust_a1");

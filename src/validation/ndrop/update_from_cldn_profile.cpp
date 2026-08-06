@@ -25,7 +25,7 @@ void update_from_cldn_profile(Ensemble *ensemble) {
     const Real air_density = input.get_array("cs_col_in_kk")[0];
     const Real air_density_kp1 = input.get_array("cs_col_in_kp1")[0];
 
-    const auto state_q_col_in_kp1 = input.get_array("state_q_col_in_kp1");
+    auto state_q_col_in_kp1 = input.get_array("state_q_col_in_kp1");
     Real qcld = input.get_array("qcld")[0];
 
     Real exp45logsig[mam4::AeroConfig::num_modes()],
@@ -51,18 +51,6 @@ void update_from_cldn_profile(Ensemble *ensemble) {
     const Real csbot_cscen = input.get_array("csbot_cscen")[0];
     auto dz = input.get_array("dz")[0];
     auto zs = input.get_array("zs")[0];
-
-    int nspec_amode[ntot_amode];
-    int lspectype_amode[maxd_aspectype][ntot_amode];
-    int lmassptr_amode[maxd_aspectype][ntot_amode];
-    Real specdens_amode[maxd_aspectype];
-    Real spechygro[maxd_aspectype];
-    int numptr_amode[ntot_amode];
-    int mam_idx[ntot_amode][nspec_max];
-    int mam_cnst_idx[ntot_amode][nspec_max];
-    mam4::ndrop::get_e3sm_parameters(
-        nspec_amode, lspectype_amode, lmassptr_amode, numptr_amode,
-        specdens_amode, spechygro, mam_idx, mam_cnst_idx);
 
     View1DHost raercol_nsav_host(raercol_nsav.data(), ncnst_tot);
     View1DHost raercol_nsav_kp1_host(raercol_nsav_kp1.data(), ncnst_tot);
@@ -98,17 +86,21 @@ void update_from_cldn_profile(Ensemble *ensemble) {
     View1D mact_view("mact_view", ntot_amode);
     Kokkos::deep_copy(mact_view, mact_host);
 
+    const int pcnst = mam4::aero_model::pcnst;
+    View1DHost state_q_col_in_kp1_host(state_q_col_in_kp1.data(), pcnst);
+    View1D state_q_col_in_kp1_view("state_q_col_in_kp1_view", pcnst);
+    Kokkos::deep_copy(state_q_col_in_kp1_view, state_q_col_in_kp1_host);
+
     Kokkos::parallel_for(
         "update_from_cldn_profile", 1, KOKKOS_LAMBDA(int) {
           mam4::ndrop::update_from_cldn_profile(
               cldn_col_in, cldn_col_in_kp1, dtinv, wtke_col_in, zs,
               dz, // ! in
               temp_col_in, air_density, air_density_kp1, csbot_cscen,
-              state_q_col_in_kp1.data(), // ! in
-              lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
-              num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes, numptr_amode,
-              nspec_amode, exp45logsig, alogsig, aten, mam_idx,
-              raercol_nsav_view, raercol_nsav_kp1_view, raercol_cw_nsav_view,
+              state_q_col_in_kp1_view.data(), // ! in
+              num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes, exp45logsig,
+              alogsig, aten, raercol_nsav_view, raercol_nsav_kp1_view,
+              raercol_cw_nsav_view,
               nsource_col_view[0], // inout
               qcld_view[0], factnum_col_view.data(),
               ekd_view[0], // out

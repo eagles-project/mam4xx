@@ -104,10 +104,9 @@ void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
                     Kokkos::subview(wetdens, kk, Kokkos::ALL());
 
                 mam4::water_uptake::modal_aero_water_uptake_dr(
-                    cal_data.nspec_amode, cal_data.specdens_amode,
-                    cal_data.spechygro, cal_data.lspectype_amode, state_q_k,
-                    temperature(kk), pmid(kk), cldn(kk), dgncur_i.data(),
-                    dgnumwet_kk.data(), qaerwat_kk.data(), wetdens_kk.data());
+                    state_q_k, temperature(kk), pmid(kk), cldn(kk),
+                    dgncur_i.data(), dgnumwet_kk.data(), qaerwat_kk.data(),
+                    wetdens_kk.data());
 
                 if (update_mmr) {
                   // Note: it only needs to update aerosol variables.

@@ -13,7 +13,6 @@ void loadaer(Ensemble *ensemble) {
     const Real zero = 0;
     const int ntot_amode = mam4::AeroConfig::num_modes();
     const int maxd_aspectype = mam4::ndrop::maxd_aspectype;
-    const int nspec_max = mam4::ndrop::nspec_max;
 
     const auto state_q = input.get_array("state_q");
     const Real air_density = input.get_array("cs")[0];
@@ -40,18 +39,6 @@ void loadaer(Ensemble *ensemble) {
     }
     std::vector<Real> naerosol(ntot_amode, zero), vaerosol(ntot_amode, zero),
         hygro(ntot_amode, zero);
-    int nspec_amode[ntot_amode];
-    int lspectype_amode[maxd_aspectype][ntot_amode];
-    int lmassptr_amode[maxd_aspectype][ntot_amode];
-    Real specdens_amode[maxd_aspectype];
-    Real spechygro[maxd_aspectype];
-    int numptr_amode[ntot_amode];
-    int mam_idx[ntot_amode][nspec_max];
-    int mam_cnst_idx[ntot_amode][nspec_max];
-
-    mam4::ndrop::get_e3sm_parameters(
-        nspec_amode, lspectype_amode, lmassptr_amode, numptr_amode,
-        specdens_amode, spechygro, mam_idx, mam_cnst_idx);
     Real exp45logsig[mam4::AeroConfig::num_modes()],
         alogsig[mam4::AeroConfig::num_modes()],
         num2vol_ratio_min_nmodes[mam4::AeroConfig::num_modes()],
@@ -63,11 +50,10 @@ void loadaer(Ensemble *ensemble) {
                             num2vol_ratio_min_nmodes,  // voltonumbhi_amode
                             num2vol_ratio_max_nmodes); // voltonumblo_amode
 
-    mam4::ndrop::loadaer(
-        state_q.data(), nspec_amode, air_density, phase, lspectype_amode,
-        specdens_amode, spechygro, lmassptr_amode, num2vol_ratio_min_nmodes,
-        num2vol_ratio_max_nmodes, numptr_amode, qcldbrn, qcldbrn1d_num.data(),
-        naerosol.data(), vaerosol.data(), hygro.data());
+    mam4::ndrop::loadaer(state_q.data(), air_density, phase,
+                         num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes,
+                         qcldbrn, qcldbrn1d_num.data(), naerosol.data(),
+                         vaerosol.data(), hygro.data());
 
     output.set("naerosol", naerosol);
     output.set("vaerosol", vaerosol);
