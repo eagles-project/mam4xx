@@ -41,7 +41,6 @@ surface_tension_water_air(double T = Constants::triple_pt_h2o) {
   EKAT_KERNEL_ASSERT(
       FloatingPoint<double>::in_bounds(T, Constants::triple_pt_h2o - 25, Tc,
                                        std::numeric_limits<float>::epsilon()));
-
   return B * mam4::pow(tau, mu) * (1 + b * tau);
 }
 

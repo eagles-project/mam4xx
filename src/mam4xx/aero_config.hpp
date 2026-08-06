@@ -90,7 +90,7 @@ public:
   }
   KOKKOS_INLINE_FUNCTION
   static constexpr int numptr_amode(const int amode) {
-    const int numptr_amode[ntot_amode()] = {23, 28, 36, 40};
+    const int numptr_amode[ntot_amode()] = {22, 27, 35, 39};
     EKAT_KERNEL_ASSERT(0 <= amode && amode < ntot_amode());
     return numptr_amode[amode];
   }
@@ -117,9 +117,10 @@ public:
   KOKKOS_INLINE_FUNCTION
   static constexpr int lspectype_amode(const int aspectype, const int amode) {
     const int lspectype_amode[maxd_aspectype()][ntot_amode()] = {
-        {1, 1, 8, 4}, {4, 5, 7, 6}, {5, 7, 1, 9}, {6, 9, 6, 0}, {8, 0, 4, 0},
-        {7, 0, 5, 0}, {9, 0, 9, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0},
-        {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
+        {0, 0, 7, 3},     {3, 4, 6, 5},     {4, 6, 0, 8},     {5, 8, 5, -1},
+        {7, -1, 3, -1},   {6, -1, 4, -1},   {8, -1, 8, -1},   {-1, -1, -1, -1},
+        {-1, -1, -1, -1}, {-1, -1, -1, -1}, {-1, -1, -1, -1}, {-1, -1, -1, -1},
+        {-1, 0, -1, -1},  {-1, -1, -1, -1}};
     EKAT_KERNEL_ASSERT(0 <= aspectype && aspectype < maxd_aspectype());
     EKAT_KERNEL_ASSERT(0 <= amode && amode < ntot_amode());
     return lspectype_amode[aspectype][amode];
@@ -127,10 +128,10 @@ public:
   KOKKOS_INLINE_FUNCTION
   static constexpr int lmassptr_amode(const int aspectype, const int amode) {
     const int lmassptr_amode[maxd_aspectype()][ntot_amode()] = {
-        {16, 24, 29, 37}, {17, 25, 30, 38}, {18, 26, 31, 39}, {19, 27, 32, 0},
-        {20, 0, 33, 0},   {21, 0, 34, 0},   {22, 0, 35, 0},   {0, 0, 0, 0},
-        {0, 0, 0, 0},     {0, 0, 0, 0},     {0, 0, 0, 0},     {0, 0, 0, 0},
-        {0, 0, 0, 0},     {0, 0, 0, 0}};
+        {15, 23, 28, 36}, {16, 24, 29, 37}, {17, 25, 30, 38}, {18, 26, 31, -1},
+        {19, -1, 32, -1}, {20, -1, 33, -1}, {21, -1, 34, -1}, {-1, -1, -1, -1},
+        {-1, -1, -1, -1}, {-1, -1, -1, -1}, {-1, -1, -1, -1}, {-1, -1, -1, -1},
+        {-1, -1, -1, -1}, {-1, -1, -1, -1}};
     EKAT_KERNEL_ASSERT(0 <= aspectype && aspectype < maxd_aspectype());
     EKAT_KERNEL_ASSERT(0 <= amode && amode < ntot_amode());
     return lmassptr_amode[aspectype][amode];
@@ -138,10 +139,10 @@ public:
   KOKKOS_INLINE_FUNCTION
   static constexpr int mam_idx(const int amode, const int nspec) {
     const int mam_idx[ntot_amode()][nspec_max()] = {
-        {1, 2, 3, 4, 5, 6, 7, 8},
-        {9, 10, 11, 12, 13, 0, 0, 0},
-        {14, 15, 16, 17, 18, 19, 20, 21},
-        {22, 23, 24, 25, 0, 0, 0, 0}};
+        {0, 1, 3, 4, 4, 5, 6, 7},
+        {8, 9, 10, 11, 12, -1, -1, -1},
+        {13, 14, 15, 16, 17, 18, 19, 20},
+        {21, 22, 23, 24, -1, -1, -1, -1}};
     EKAT_KERNEL_ASSERT(0 <= amode && amode < ntot_amode());
     EKAT_KERNEL_ASSERT(0 <= nspec && nspec < nspec_max());
     return mam_idx[amode][nspec];
@@ -149,10 +150,10 @@ public:
   KOKKOS_INLINE_FUNCTION
   static constexpr int mam_cnst_idx(const int amode, const int nspec) {
     const int mam_cnst_idx[ntot_amode()][nspec_max()] = {
-        {23, 16, 17, 18, 19, 20, 21, 22},
-        {28, 24, 25, 26, 27, 0, 0, 0},
-        {36, 29, 30, 31, 32, 33, 34, 35},
-        {40, 37, 38, 39, 0, 0, 0, 0}};
+        {22, 15, 16, 17, 18, 19, 20, 21},
+        {27, 23, 24, 25, 26, -1, -1, -1},
+        {35, 28, 29, 30, 31, 32, 33, 34},
+        {39, 36, 37, 38, -1, -1, -1, -1}};
     EKAT_KERNEL_ASSERT(0 <= amode && amode < ntot_amode());
     EKAT_KERNEL_ASSERT(0 <= nspec && nspec < nspec_max());
     return mam_cnst_idx[amode][nspec];

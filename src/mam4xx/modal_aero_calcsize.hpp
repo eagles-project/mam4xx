@@ -193,7 +193,7 @@ KOKKOS_INLINE_FUNCTION void compute_coef_acc_ait_transfer(
           // need qmass*invdens = (kg/kg-air) * [1/(kg/m3)] = m3/kg-air
           ; // !get mmr
           // Fortran to C++ indexing
-          const int idx = AeroConfig::lmassptr_amode(ispec, iacc) - 1;
+          const int idx = AeroConfig::lmassptr_amode(ispec, iacc);
           drv_i_noxf +=
               mam4::max(zero, state_q[idx]) * inv_density[iacc][ispec];
           drv_c_noxf += mam4::max(zero, qqcw[idx]) * inv_density[iacc][ispec];
@@ -420,7 +420,7 @@ compute_dry_volume(int imode,                 // in
   const auto n_spec = num_species_mode(imode);
   for (int ispec = 0; ispec < n_spec; ispec++) {
     // Fortran to C++ indexing
-    const int idx = AeroConfig::lmassptr_amode(ispec, imode) - 1;
+    const int idx = AeroConfig::lmassptr_amode(ispec, imode);
     dryvol_i += mam4::max(zero, state_q[idx]) * inv_density[imode][ispec];
     dryvol_c += mam4::max(zero, qqcw[idx]) * inv_density[imode][ispec];
   } // end ispec
@@ -864,10 +864,10 @@ modal_aero_calcsize_sub(const VectorType &state_q, // in
     // Both num_mode_idx and num_cldbrn_mode_idx should be exactly same and
     // should be same for both prognostic and diagnostic radiation lists
     // Fortran to C++ indexing
-    const int num_mode_idx = AeroConfig::numptr_amode(imode) - 1;
+    const int num_mode_idx = AeroConfig::numptr_amode(imode);
     // Fortran to C++ indexing
     const int num_cldbrn_mode_idx =
-        AeroConfig::numptr_amode(imode) - 1;          // numptrcw_amode[imode];
+        AeroConfig::numptr_amode(imode);              // numptrcw_amode[imode];
     const Real n_i_imode = state_q[num_mode_idx];     // from state_q
     const Real n_c_imode = qqcw[num_cldbrn_mode_idx]; // from qqcw
     // const bool update_mmr

@@ -39,6 +39,7 @@ KOKKOS_INLINE_FUNCTION Real cube(const Real x) { return x * x * x; }
 KOKKOS_INLINE_FUNCTION constexpr Real epsilon() {
   return Kokkos::Experimental::epsilon_v<Real>;
 }
+
 } // namespace mam4
 
 #endif

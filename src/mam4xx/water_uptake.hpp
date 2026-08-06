@@ -334,14 +334,14 @@ KOKKOS_INLINE_FUNCTION void modal_aero_water_uptake_dryaer(
     rhdeliques[imode] = modes(imode).deliquescence_pt;
     const int nspec = AeroConfig::nspec_amode(imode);
     int type_idx =
-        AeroConfig::lspectype_amode(0, imode) - 1; // Fortran to C++ indexing
+        AeroConfig::lspectype_amode(0, imode); // Fortran to C++ indexing
     specdens_1[imode] = AeroConfig::specdens_amode(type_idx);
     const Real spechygro_1 = AeroConfig::spechygro(type_idx);
 
     const Real alnsg = mam4::log(sigmag);
 
     for (int ispec = 0; ispec < nspec; ++ispec) {
-      type_idx = AeroConfig::lspectype_amode(ispec, imode) - 1;
+      type_idx = AeroConfig::lspectype_amode(ispec, imode);
       const Real spechygro_i = AeroConfig::spechygro(type_idx);
       const Real specdens = AeroConfig::specdens_amode(type_idx);
 

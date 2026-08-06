@@ -14,8 +14,6 @@ void update_from_explmix(Ensemble *ensemble) {
     const int ntot_amode = mam4::AeroConfig::num_modes();
     const int pver = mam4::ndrop::pver;
     const int top_lev = 6;
-    const auto mam_idx_db = input.get_array("mam_idx");
-    const auto nspec_amode_db = input.get_array("nspec_amode");
 
     static_cast<void>(input.get_array("nnew")[0]);
     static_cast<void>(input.get_array("nsav")[0]);
@@ -39,7 +37,6 @@ void update_from_explmix(Ensemble *ensemble) {
     const Real zero = 0.0;
     const int nmodes = mam4::AeroConfig::num_modes();
     const int ncnst_tot = 25;
-    const int nspec_max = 8;
     int raer_len = pver * ncnst_tot;
     int act_len = pver * nmodes;
 
@@ -128,17 +125,6 @@ void update_from_explmix(Ensemble *ensemble) {
 
     Kokkos::deep_copy(nact, nact_host);
     Kokkos::deep_copy(mact, mact_host);
-
-    int nspec_amode[nmodes];
-    int mam_idx[nmodes][nspec_max];
-    for (int m = 0; m < nmodes; m++) {
-      nspec_amode[m] = nspec_amode_db[m];
-    }
-    for (int n = 0, counter = 0; n < nspec_max; n++) {
-      for (int m = 0; m < nmodes; m++, ++counter) {
-        mam_idx[m][n] = mam_idx_db[counter];
-      }
-    }
 
     auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
     Kokkos::parallel_for(

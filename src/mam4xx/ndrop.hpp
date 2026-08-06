@@ -61,7 +61,7 @@ void get_aer_mmr_sum(const int imode, const int nspec,
   // per mode.
   for (int lspec = 0; lspec < nspec; ++lspec) {
     // Fortran indexing to C++
-    const int type_idx = AeroConfig::lspectype_amode(lspec, imode) - 1;
+    const int type_idx = AeroConfig::lspectype_amode(lspec, imode);
     // density at species / mode indices [kg/m3]
     const Real density_sp =
         AeroConfig::specdens_amode(type_idx); // species density
@@ -70,7 +70,7 @@ void get_aer_mmr_sum(const int imode, const int nspec,
         AeroConfig::spechygro(type_idx); // species hygroscopicity
     // Fortran indexing to C++
     // index of species in state_q array
-    const int spc_idx = AeroConfig::lmassptr_amode(lspec, imode) - 1;
+    const int spc_idx = AeroConfig::lmassptr_amode(lspec, imode);
     // aerosol volume mixing ratio [m3/kg]
     const Real vol = mam4::max(state_q[spc_idx] + qcldbrn1d[lspec], zero) /
                      density_sp; // volume = mmr/density
@@ -240,7 +240,7 @@ void loadaer(const Real state_q[aero_model::pcnst], Real air_density,
 
     // Compute aerosol number concentration
     // Fortran indexing to C++
-    const int num_idx = AeroConfig::numptr_amode(imode) - 1;
+    const int num_idx = AeroConfig::numptr_amode(imode);
     get_aer_num(voltonumbhi_amode[imode], voltonumblo_amode[imode], num_idx,
                 state_q, air_density, vaerosol[imode], qcldbrn1d_num[imode],
                 naerosol[imode]);
@@ -808,7 +808,7 @@ void update_from_cldn_profile(
       for (int imode = 0; imode < ntot_amode; ++imode) {
         // local array index for MAM number, species
         // Fortran indexing to C++ indexing
-        const int mm = AeroConfig::mam_idx(imode, 0) - 1;
+        const int mm = AeroConfig::mam_idx(imode, 0);
         nact[imode] += fluxn[imode] * crdz * delz_cld;
         mact[imode] += fluxm[imode] * crdz * delz_cld;
         // note that kp1 is used here
@@ -833,12 +833,12 @@ void update_from_cldn_profile(
     for (int imode = 0; imode < ntot_amode; ++imode) {
       // local array index for MAM number, species
       // Fortran indexing to C++ indexing
-      int mm = AeroConfig::mam_idx(imode, 0) - 1;
+      int mm = AeroConfig::mam_idx(imode, 0);
       raercol_nsav[mm] += raercol_cw_nsav[mm]; // cloud-borne aerosol
       raercol_cw_nsav[mm] = zero;
 
       for (int lspec = 1; lspec < AeroConfig::nspec_amode(imode) + 1; ++lspec) {
-        mm = AeroConfig::mam_idx(imode, lspec) - 1;
+        mm = AeroConfig::mam_idx(imode, lspec);
         raercol_nsav[mm] += raercol_cw_nsav[mm]; // cloud-borne aerosol
         raercol_cw_nsav[mm] = zero;
       }
@@ -909,14 +909,14 @@ void update_from_newcld(const Real cldn_col_in, const Real cldo_col_in,
 
     for (int imode = 0; imode < ntot_amode; ++imode) {
       // Fortran indexing to C++ indexing
-      const int mm = AeroConfig::mam_idx(imode, 0) - 1;
+      const int mm = AeroConfig::mam_idx(imode, 0);
       // cloud-borne aerosol tendency due to cloud frac tendency [#/kg or kg/kg]
       const Real dact = raercol_cw_nsav[mm] * frac_delt_cld;
       raercol_cw_nsav[mm] += dact; // cloud-borne aerosol
       raercol_nsav[mm] -= dact;
       for (int lspec = 1; lspec < AeroConfig::nspec_amode(imode) + 1; ++lspec) {
         // Fortran indexing to C++ indexing
-        const int mm = AeroConfig::mam_idx(imode, lspec) - 1;
+        const int mm = AeroConfig::mam_idx(imode, lspec);
         const Real dact = raercol_cw_nsav[mm] * frac_delt_cld;
         raercol_cw_nsav[mm] += dact; // cloud-borne aerosol
         raercol_nsav[mm] -= dact;
@@ -946,9 +946,9 @@ void update_from_newcld(const Real cldn_col_in, const Real cldo_col_in,
 
     for (int imode = 0; imode < ntot_amode; ++imode) {
       // Fortran indexing to C++ indexing
-      const int mm = AeroConfig::mam_idx(imode, 0) - 1;
+      const int mm = AeroConfig::mam_idx(imode, 0);
       // Fortran indexing to C++ indexing
-      const int num_idx = AeroConfig::numptr_amode(imode) - 1;
+      const int num_idx = AeroConfig::numptr_amode(imode);
       const Real dact = delt_cld * factnum_col_out[imode] *
                         state_q_col_in[num_idx]; // interstitial only
       qcld += dact;
@@ -960,9 +960,9 @@ void update_from_newcld(const Real cldn_col_in, const Real cldo_col_in,
 
       for (int lspec = 1; lspec < AeroConfig::nspec_amode(imode) + 1; ++lspec) {
         // Fortran indexing to C++ indexing
-        const int mm = AeroConfig::mam_idx(imode, lspec) - 1;
+        const int mm = AeroConfig::mam_idx(imode, lspec);
         // Fortran indexing to C++ indexing
-        const int spc_idx = AeroConfig::lmassptr_amode(lspec - 1, imode) - 1;
+        const int spc_idx = AeroConfig::lmassptr_amode(lspec - 1, imode);
         // interstitial only
         const Real dact = fm_delt_cld * state_q_col_in[spc_idx];
         raercol_cw_nsav[mm] += dact; //  cloud-borne aerosol
@@ -1196,7 +1196,7 @@ void update_from_explmix(
           //         srcn(:)=srcn(:)+nact(:,m)*(raercol(:,mm,nsav))
           Real srcn = zero;
           for (int imode = 0; imode < ntot_amode; imode++) {
-            const int mm = AeroConfig::mam_idx(imode, 0) - 1;
+            const int mm = AeroConfig::mam_idx(imode, 0);
             srcn += nact(k, imode) * raercol_kp1_nsav(mm);
             if (k == pver_loc - 1) {
               // rce-comment- new formulation for k=pver
@@ -1224,7 +1224,7 @@ void update_from_explmix(
           for (int imode = 0; imode < ntot_amode; imode++) {
             for (int lspec = 0; lspec < AeroConfig::nspec_amode(imode) + 1;
                  lspec++) {
-              const int mm = AeroConfig::mam_idx(imode, lspec) - 1;
+              const int mm = AeroConfig::mam_idx(imode, lspec);
               Real source = 0;
               if (k < pver_loc - 1) {
                 const Real act = lspec ? mact(k, imode) : nact(k, imode);
@@ -1259,13 +1259,13 @@ void update_from_explmix(
 
           // convert activated aerosol to interstitial in decaying cloud
           for (int imode = 0; imode < ntot_amode; imode++) {
-            const int mm = AeroConfig::mam_idx(imode, 0) - 1;
+            const int mm = AeroConfig::mam_idx(imode, 0);
             raercol(k, nnew, mm) += raercol_cw(k, nnew, mm);
             raercol_cw(k, nnew, mm) = zero;
 
             for (int lspec = 1; lspec < AeroConfig::nspec_amode(imode) + 1;
                  lspec++) {
-              const int mm = AeroConfig::mam_idx(imode, lspec) - 1;
+              const int mm = AeroConfig::mam_idx(imode, lspec);
               raercol(k, nnew, mm) += raercol_cw(k, nnew, mm);
               raercol_cw(k, nnew, mm) = zero;
             } // lspec
@@ -1417,20 +1417,19 @@ void dropmixnuc(
       Kokkos::TeamVectorRange(team, top_lev, pver_loc), [&](int k) {
         for (int imode = 0; imode < ntot_amode; ++imode) {
           // Fortran indexing to C++ indexing
-          const int mm = AeroConfig::mam_idx(imode, 0) - 1;
+          const int mm = AeroConfig::mam_idx(imode, 0);
           raercol_cw(k, nsav, mm) = qqcw_fld(mm, k);
           // Fortran indexing to C++ indexing
-          const int num_idx = AeroConfig::numptr_amode(imode) - 1;
+          const int num_idx = AeroConfig::numptr_amode(imode);
           raercol(k, nsav, mm) = state_q(k, num_idx);
           for (int lspec = 1; lspec < AeroConfig::nspec_amode(imode) + 1;
                ++lspec) {
             // Fortran indexing to C++ indexing
-            const int mm = AeroConfig::mam_idx(imode, lspec) - 1;
+            const int mm = AeroConfig::mam_idx(imode, lspec);
 
             raercol_cw(k, nsav, mm) = qqcw_fld(mm, k);
             // Fortran indexing to C++ indexing
-            const int spc_idx =
-                AeroConfig::lmassptr_amode(lspec - 1, imode) - 1;
+            const int spc_idx = AeroConfig::lmassptr_amode(lspec - 1, imode);
             raercol(k, nsav, mm) = state_q(k, spc_idx);
           } // lspec
         }   // imode
@@ -1538,23 +1537,22 @@ void dropmixnuc(
                ++lspec) {
             // local array index for MAM number, species
             // Fortran indexing to C++ indexing
-            const int mm = AeroConfig::mam_idx(imode, lspec) - 1;
+            const int mm = AeroConfig::mam_idx(imode, lspec);
             // Fortran indexing to C++ indexing
-            const int lptr = AeroConfig::mam_cnst_idx(imode, lspec) - 1;
+            const int lptr = AeroConfig::mam_cnst_idx(imode, lspec);
             qqcwtend(k) = (raercol_cw(k, nnew, mm) - qqcw_fld(mm, k)) * dtinv;
             qqcw_fld(mm, k) = mam4::max(raercol_cw(k, nnew, mm),
                                         zero); // update cloud-borne aerosol
 
             if (lspec == 0) {
               // Fortran indexing to C++ indexing
-              const int num_idx = AeroConfig::numptr_amode(imode) - 1;
+              const int num_idx = AeroConfig::numptr_amode(imode);
               raertend(k) =
                   (raercol(k, nnew, mm) - state_q(k, num_idx)) * dtinv;
               qcldbrn_num[imode] = qqcw_fld(mm, k);
             } else {
               // Fortran indexing to C++ indexing
-              const int spc_idx =
-                  AeroConfig::lmassptr_amode(lspec - 1, imode) - 1;
+              const int spc_idx = AeroConfig::lmassptr_amode(lspec - 1, imode);
               raertend(k) =
                   (raercol(k, nnew, mm) - state_q(k, spc_idx)) * dtinv;
               // Extract cloud borne MMRs from qqcw pointer

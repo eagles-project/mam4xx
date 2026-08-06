@@ -166,7 +166,7 @@ inline void set_device_specrefindex(
       // // Fortran to C++ indexing
       for (int ll = 0; ll < nspec; ++ll) {
         specrefindex_host(ll, ibands) =
-            specrefndx_host(ibands, AeroConfig::lspectype_amode(ll, mm) - 1);
+            specrefndx_host(ibands, AeroConfig::lspectype_amode(ll, mm));
       } // ll
     }   // ibands
     Kokkos::deep_copy(specrefindex[mm], specrefindex_host);
@@ -615,11 +615,11 @@ KOKKOS_INLINE_FUNCTION void modal_aero_sw_wo_diagnostics_k(
 
         // get aerosol properties and save for each species
         // Fortran to C++ indexing
-        auto specmmr = state_q_kk[AeroConfig::lmassptr_amode(ll, mm) - 1];
+        auto specmmr = state_q_kk[AeroConfig::lmassptr_amode(ll, mm)];
         // FIXME: move specdens to init
         //  Fortran to C++ indexing
         const Real specdens =
-            AeroConfig::specdens_amode(AeroConfig::lspectype_amode(ll, mm) - 1);
+            AeroConfig::specdens_amode(AeroConfig::lspectype_amode(ll, mm));
 
         // allocate(specvol(pcols,nspec),stat=istat)
         specvol[ll] = specmmr / specdens;
@@ -910,11 +910,11 @@ KOKKOS_INLINE_FUNCTION void modal_aero_lw_k(
 
       for (int ll = 0; ll < nspec; ++ll) {
         // Fortran to C++ indexing
-        auto specmmr = state_q_kk[AeroConfig::lmassptr_amode(ll, mm) - 1];
+        auto specmmr = state_q_kk[AeroConfig::lmassptr_amode(ll, mm)];
         // FIXME: move specdens to int
         //  Fortran to C++ indexing
         const Real specdens =
-            AeroConfig::specdens_amode(AeroConfig::lspectype_amode(ll, mm) - 1);
+            AeroConfig::specdens_amode(AeroConfig::lspectype_amode(ll, mm));
 
         specvol[ll] = specmmr / specdens;
       } // ll
