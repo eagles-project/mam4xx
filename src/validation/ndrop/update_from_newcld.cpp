@@ -25,7 +25,7 @@ void update_from_newcld(Ensemble *ensemble) {
     const Real wtke_col_in = input.get_array("wtke_col_in")[0];
     const Real temp_col_in = input.get_array("temp_col_in")[0];
     const Real air_density = input.get_array("cs_col_in")[0];
-    const auto state_q = input.get_array("state_q_col_in");
+    auto state_q = input.get_array("state_q_col_in");
     Real qcld = input.get_array("qcld")[0];
 
     Real exp45logsig[mam4::AeroConfig::num_modes()],
@@ -63,12 +63,17 @@ void update_from_newcld(Ensemble *ensemble) {
     View1D factnum_col_out_view("factnum_col_out_view", ntot_amode);
     Kokkos::deep_copy(factnum_col_out_view, factnum_col_out_host);
 
+    const int pcnst = mam4::aero_model::pcnst;
+    View1DHost state_q_host(state_q.data(), pcnst);
+    View1D state_q_view("state_q_view", pcnst);
+    Kokkos::deep_copy(state_q_view, state_q_host);
+
     Kokkos::parallel_for(
         "update_from_newcld", 1, KOKKOS_LAMBDA(int) {
           update_from_newcld(
               cldn_col_in, cldo_col_in, dtinv, //& ! in
               wtke_col_in, temp_col_in, air_density,
-              state_q.data(), //& ! in
+              state_q_view.data(), //& ! in
               num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes, exp45logsig,
               alogsig, aten, qcld_view[0], raercol_nsav_view,
               raercol_cw_nsav_view, //&      ! inout
