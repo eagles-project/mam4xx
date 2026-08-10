@@ -203,6 +203,7 @@ void mode_avg_wet_particle_diam_water_uptake(const Diagnostics &diags,
   }
 }
 
+/* TODO: remove or re-purpose the following unused function:
 // ------------------------------------------------------------------------
 //  Subroutine for calculating wet geometric mean diameter from
 //  the aerosol mass and number concentrations, using a prescribed
@@ -246,6 +247,7 @@ void diag_dgn_wet(
     dgn_awet[n] = pow(tmpb, (1.0 / 3.0) * dwet_ddry_ratio);
   }
 }
+*/
 
 } // namespace mam4
 #endif
