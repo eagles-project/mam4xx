@@ -40,10 +40,10 @@ void mode_avg_dry_particle_diam(const AeroSpeciesView &aero_species,
                                          static_cast<AeroId>(aid));
     if (s >= 0) {
       volume_mixing_ratio_i +=
-          progs.q_aero_i[mode_idx][s](k) / aero_species(s).density;
+          progs.q_aero_i[mode_idx][s](k) / aero_species(aid).density;
 
       volume_mixing_ratio_c +=
-          progs.q_aero_c[mode_idx][s](k) / aero_species(s).density;
+          progs.q_aero_c[mode_idx][s](k) / aero_species(aid).density;
     }
   }
   const Real mean_vol_i = volume_mixing_ratio_i / progs.n_mode_i[mode_idx](k);
