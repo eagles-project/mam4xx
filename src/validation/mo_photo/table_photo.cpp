@@ -103,9 +103,7 @@ void table_photo(Ensemble *ensemble) {
     View3D psum_u("psum_u", ncol, pver, table_data.nw);
 
     auto pht_alias_mult_1_db = input.get_array("pht_alias_mult");
-    auto pht_alias_mult_1_host =
-        View1DHost((Real *)pht_alias_mult_1_db.data(), 2);
-    Kokkos::deep_copy(table_data.pht_alias_mult_1, pht_alias_mult_1_host);
+    Kokkos::deep_copy(table_data.pht_alias_mult_1, pht_alias_mult_1_db[1]);
 
     auto lng_indexer_db = input.get_array("lng_indexer");
     Kokkos::deep_copy(table_data.lng_indexer, lng_indexer_db[0] - 1);

@@ -93,7 +93,9 @@ inline PhotoTableData create_photo_table_data(int nw, int nt, int np_xs,
   table_data.etfphot = View1D("photo_table_data.etfphot", table_data.nw);
   table_data.prs = View1D("photo_table_data.prs", table_data.np_xs);
   table_data.dprs = View1D("photo_table_data.dprs", table_data.np_xs - 1);
-  table_data.pht_alias_mult_1 = View1D("photo_table_data.pht_alias_mult_1", 2);
+  table_data.pht_alias_mult_1 =
+      View1D("photo_table_data.pht_alias_mult_1", phtcnt);
+  Kokkos::deep_copy(table_data.pht_alias_mult_1, 1.0);
   table_data.lng_indexer = ViewInt1D("photo_table_data.lng_indexer", 1);
 
   return table_data;
@@ -855,7 +857,10 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
               eff_alb, cld_mult, work_cloud_mod);
     team.team_barrier();
     Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
-                         [&](const int kk) { parg(kk) = pmid(kk) * Pa2mb; });
+                         [&](const int kk) {
+                           parg(kk) = pmid(kk) * Pa2mb;
+                           cld_mult(kk) *= esfact;
+                         });
     team.team_barrier();
     /*-----------------------------------------------------------------
      ... long wave length component
@@ -879,10 +884,11 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
           for (int mm = 0; mm < phtcnt; ++mm) {
             const int ind = table_data.lng_indexer(mm);
             if (ind > -1) {
-              photo(kk, mm) =
-                  cld_mult(kk) * esfact *
-                  (photo(kk, mm) + table_data.pht_alias_mult_1(mm) *
-                                       work_arrays.lng_prates(ind, kk));
+              const Real alias_factor = table_data.pht_alias_mult_1(
+                  mm); // 0-indexed, col 2 -> index 1
+              photo(kk, mm) = (photo(kk, mm) +
+                               alias_factor * work_arrays.lng_prates(ind, kk)) *
+                              cld_mult(kk);
             }
           }
         });
