@@ -251,7 +251,6 @@ static mam4::mo_photo::PhotoTableData build_test_photo_table() {
 
   auto pam_h = Kokkos::create_mirror_view(photo_table.pht_alias_mult_1);
   pam_h(0) = 1.0;
-  pam_h(1) = 0.0;
   Kokkos::deep_copy(photo_table.pht_alias_mult_1, pam_h);
 
   auto li_h = Kokkos::create_mirror_view(photo_table.lng_indexer);
