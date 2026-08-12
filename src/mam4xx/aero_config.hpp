@@ -157,6 +157,7 @@ public:
     EKAT_KERNEL_ASSERT(0 <= amode && amode < ntot_amode());
     EKAT_KERNEL_ASSERT(0 <= nspec && nspec < nspec_max());
     return mam_cnst_idx[amode][nspec];
+  }
 
   /// Creates a temporary scratch view in High-Bandwidth Memory (provided by the
   /// given team) that can store a quantity associated with each aerosol mode.

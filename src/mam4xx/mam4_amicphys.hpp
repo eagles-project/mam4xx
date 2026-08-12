@@ -1124,10 +1124,12 @@ void mam_newnuc_1subarea(
 //  cloudy air
 //  - coagulation - because cloud-borne aerosol would need to be included
 //--------------------------------------------------------------------------------
+// FIXME: replace these arrays with views???
 KOKKOS_INLINE_FUNCTION
 void mam_amicphys_1subarea(
     // in
-    const AeroConfig &aero_config, const int newnuc_h2so4_conc_optaa,
+    const AeroConfig &aero_config, const ThreadTeam &team,
+    const int newnuc_h2so4_conc_optaa,
     const int gaexch_h2so4_uptake_optaa, const bool do_cond_sub,
     const bool do_rename_sub, const bool do_newnuc_sub, const bool do_coag_sub,
     const Real deltat, const int jsubarea, const bool iscldy_subarea,
@@ -1497,16 +1499,16 @@ void mam_amicphys_1subarea(
 
       // swap dimensions as mam_rename_1subarea_ uses output arrays in
       //  a swapped dimension order
-      Real qaer_cur_tmp[nmodes][nspecies];
-      Real qaer_delsub_grow4rnam_tmp[nmodes][nspecies];
-      Real qaercw_cur_tmp[nmodes][nspecies];
-      Real qaercw_delsub_grow4rnam_tmp[nmodes][nspecies];
+      auto qaer_cur_tmp = aero_config.create_mode_species_view(team);
+      auto qaer_delsub_grow4rnam_tmp = aero_config.create_mode_species_view(team);
+      auto qaercw_cur_tmp = aero_config.create_mode_species_view(team);
+      auto qaercw_delsub_grow4rnam_tmp = aero_config.create_mode_species_view(team);
       for (int is = 0; is < nspecies; ++is) {
         for (int im = 0; im < nmodes; ++im) {
-          qaer_cur_tmp[im][is] = qaer_cur[is][im];
-          qaer_delsub_grow4rnam_tmp[im][is] = qaer_delsub_grow4rnam[is][im];
-          qaercw_cur_tmp[im][is] = qaercw_cur[is][im];
-          qaercw_delsub_grow4rnam_tmp[im][is] = qaercw_delsub_grow4rnam[is][im];
+          qaer_cur_tmp(im, is) = qaer_cur[is][im];
+          qaer_delsub_grow4rnam_tmp(im, is) = qaer_delsub_grow4rnam[is][im];
+          qaercw_cur_tmp(im, is) = qaercw_cur[is][im];
+          qaercw_delsub_grow4rnam_tmp(im, is) = qaercw_delsub_grow4rnam[is][im];
         }
       }
 
@@ -1522,7 +1524,7 @@ void mam_amicphys_1subarea(
 
       Rename rename;
       rename.mam_rename_1subarea_(
-          aero_config, iscldy_subarea, smallest_dryvol_value,
+          aero_config, team, iscldy_subarea, smallest_dryvol_value,
           dest_mode_of_mode,                                          // in
           mean_std_dev, fmode_dist_tail_fac, v2n_lo_rlx, v2n_hi_rlx,  // in
           ln_diameter_tail_fac, num_pairs, diameter_cutoff,           // in

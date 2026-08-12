@@ -129,10 +129,6 @@ struct CalcsizeData {
   bool update_mmr = false;
 
   void initialize(const AeroConfig &aero_config) {
-    ndrop::get_e3sm_parameters(nspec_amode, lspectype_amode, lmassptr_amode,
-                               numptr_amode, specdens_amode, spechygro, mam_idx,
-                               mam_cnst_idx);
-
     init_calcsize(aero_config, inv_density, num2vol_ratio_min,
                   num2vol_ratio_max, num2vol_ratio_max_nmodes,
                   num2vol_ratio_min_nmodes, num2vol_ratio_nom_nmodes,
