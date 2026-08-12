@@ -589,12 +589,12 @@ public:
     int iaer_so4 = aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::SO4);
     int iaer_pom = aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::POM);
 
-    _mass_2_vol[iaer_soa] =
-        config_._molecular_weight_soa / aero_species_h(iaer_soa).density;
-    _mass_2_vol[iaer_so4] =
-        config_._molecular_weight_so4 / aero_species_h(iaer_so4).density;
-    _mass_2_vol[iaer_pom] =
-        config_._molecular_weight_pom / aero_species_h(iaer_pom).density;
+    _mass_2_vol[iaer_soa] = config_._molecular_weight_soa /
+                            aero_species_h(int(AeroId::SOA)).density;
+    _mass_2_vol[iaer_so4] = config_._molecular_weight_so4 /
+                            aero_species_h(int(AeroId::SO4)).density;
+    _mass_2_vol[iaer_pom] = config_._molecular_weight_pom /
+                            aero_species_h(int(AeroId::POM)).density;
 
   } // end(init)
 
