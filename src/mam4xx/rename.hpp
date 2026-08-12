@@ -662,13 +662,13 @@ public:
     // qaercw_del_grow4rnam -> qmol_c_del
     // =======================================================================
 
-    auto qnum_i_cur = config.create_mode_view(team);
-    auto qmol_i_cur = config.create_mode_species_view(team);
-    auto qmol_i_del = config.create_mode_species_view(team);
+    auto qnum_i_cur = create_mode_view(team, config);
+    auto qmol_i_cur = create_mode_species_view(team, config);
+    auto qmol_i_del = create_mode_species_view(team, config);
 
-    auto qnum_c_cur = config.create_mode_view(team);
-    auto qmol_c_cur = config.create_mode_species_view(team);
-    auto qmol_c_del = config.create_mode_species_view(team);
+    auto qnum_c_cur = create_mode_view(team, config);
+    auto qmol_c_cur = create_mode_species_view(team, config);
+    auto qmol_c_del = create_mode_species_view(team, config);
 
     Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int kk) {
       const bool &is_cloudy_cur = is_cloudy(kk);
@@ -746,10 +746,10 @@ public:
       AeroModeSpeciesView qmol_c_del)                           // in
       const {
 
-    auto dryvol_i = aero_config.create_mode_view(team);
-    auto deldryvol_i = aero_config.create_mode_view(team);
-    auto dryvol_c = aero_config.create_mode_view(team);
-    auto deldryvol_c = aero_config.create_mode_view(team);
+    auto dryvol_i = create_mode_view(team, aero_config);
+    auto deldryvol_i = create_mode_view(team, aero_config);
+    auto dryvol_c = create_mode_view(team, aero_config);
+    auto deldryvol_c = create_mode_view(team, aero_config);
 
     // Interstitial aerosols: Compute initial (before growth) aerosol dry
     // volume and also the growth in dry volume of the "src" mode

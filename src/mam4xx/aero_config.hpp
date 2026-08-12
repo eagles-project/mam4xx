@@ -158,27 +158,6 @@ public:
     EKAT_KERNEL_ASSERT(0 <= nspec && nspec < nspec_max());
     return mam_cnst_idx[amode][nspec];
   }
-
-  /// Creates a temporary scratch view in High-Bandwidth Memory (provided by the
-  /// given team) that can store a quantity associated with each aerosol mode.
-  KOKKOS_INLINE_FUNCTION
-  AeroModeView create_mode_view(const ThreadTeam &team) const {
-    size_t mode_size = sizeof(Real) * num_modes();
-    AeroModeView v(team.team_scratch(1), num_modes(), mode_size);
-    Kokkos::deep_copy(v, 0.0);
-    return v;
-  }
-
-  /// Creates a temporary scratch view in High-Bandwidth Memory (provided by the
-  /// given team) that can store a quantity associated with each aerosol species
-  /// in each mode.
-  KOKKOS_INLINE_FUNCTION
-  AeroModeSpeciesView create_mode_species_view(const ThreadTeam &team) const {
-    size_t mode_species_size = sizeof(Real) * num_modes() * num_aerosol_ids();
-    AeroModeSpeciesView v(team.team_scratch(1), num_modes(), num_aerosol_ids());
-    Kokkos::deep_copy(v, 0.0);
-    return v;
-  }
 };
 
 /// MAM4 column-wise prognostic aerosol fields (also used for tendencies).
@@ -682,6 +661,67 @@ public:
   /// mechanism for now) [#/cc/s]
   ColumnView volume_tends[AeroConfig::num_gas_phase_species()];
 };
+
+//--------------------------------------------------------
+// Managing Temporary Aerosol Mode and Mode-Species Views
+//--------------------------------------------------------
+
+struct ScratchPadConfig {
+  struct {
+    int num_mode_views;
+    int num_mode_species_views;
+    int num_gas_views;
+  } per_thread;
+  struct {
+    int num_mode_views;
+    int num_mode_species_views;
+    int num_gas_views;
+  } per_team;
+};
+
+/// Allocates scratchpad memory for given thread team with the given configuration.
+inline
+void set_scratch_size(ThreadTeamPolicy &team_policy,
+                      const AeroConfig &aero_config, const ScratchPadConfig &scratch_config) {
+  size_t mode_view_size = sizeof(Real) * aero_config.num_modes();
+  size_t mode_species_view_size = sizeof(Real) * aero_config.num_modes() * aero_config.num_aerosol_ids();
+  size_t gas_view_size = sizeof(Real) * aero_config.num_gas_ids();
+  size_t per_thread = scratch_config.per_thread.num_mode_views * mode_view_size + 
+                      scratch_config.per_thread.num_mode_species_views * mode_species_view_size +
+                      scratch_config.per_thread.num_gas_views * gas_view_size;
+  size_t per_team = scratch_config.per_team.num_mode_views * mode_view_size + 
+                    scratch_config.per_team.num_mode_species_views * mode_species_view_size;
+                    scratch_config.per_team.num_gas_views * gas_view_size;
+  team_policy.set_scratch_size(1, Kokkos::PerThread(per_thread), Kokkos::PerTeam(per_team));
+}
+
+/// Creates a temporary scratch view in High-Bandwidth Memory (provided by the
+/// given team) that can store a quantity associated with each aerosol mode.
+KOKKOS_INLINE_FUNCTION
+AeroModeView create_mode_view(const ThreadTeam &team, const AeroConfig &config) {
+  AeroModeView v(team.team_scratch(1), config.num_modes());
+  Kokkos::deep_copy(v, 0.0);
+  return v;
+}
+
+/// Creates a temporary scratch view in High-Bandwidth Memory (provided by the
+/// given team) that can store a quantity associated with each aerosol species
+/// in each mode.
+KOKKOS_INLINE_FUNCTION
+AeroModeSpeciesView create_mode_species_view(const ThreadTeam &team, const AeroConfig &config) {
+  AeroModeSpeciesView v(team.team_scratch(1), config.num_modes(), config.num_aerosol_ids());
+  Kokkos::deep_copy(v, 0.0);
+  return v;
+}
+
+/// Creates a temporary scratch view in High-Bandwidth Memory (provided by the
+/// given team) that can store a quantity associated with each gas species.
+KOKKOS_INLINE_FUNCTION
+GasView create_gas_view(const ThreadTeam &team, const AeroConfig &config) {
+  GasView v(team.team_scratch(1), config.num_gas_ids());
+  Kokkos::deep_copy(v, 0.0);
+  return v;
+}
 
 } // namespace mam4
 

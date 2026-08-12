@@ -1135,11 +1135,11 @@ void mam_amicphys_1subarea(
     const Real deltat, const int jsubarea, const bool iscldy_subarea,
     const unsigned n_so4_monolayers_pcage, const Real afracsub, const Real temp,
     const Real pmid, const Real pdel, const Real zmid, const Real pblh,
-    const Real relhumsub, const Real (&dgn_a)[num_modes],
-    const Real (&dgn_awet)[num_modes], const Real (&wetdens)[num_modes],
-    const Real (&qgas1)[max_gas()], const Real (&qgas3)[max_gas()],
+    const Real relhumsub, const AeroModeView dgn_a,
+    const AeroModeView dgn_awet, const AeroModeView wetdens,
+    const GasView qgas1, const GasView qgas3,
     // inout
-    Real (&qgas_cur)[max_gas()], Real (&qgas_delaa)[max_gas()][nqtendaa()],
+    GasView qgas_cur, Real (&qgas_delaa)[max_gas()][nqtendaa()],
     // in
     const Real (&qnum3)[num_modes],
     // inout
@@ -1499,10 +1499,10 @@ void mam_amicphys_1subarea(
 
       // swap dimensions as mam_rename_1subarea_ uses output arrays in
       //  a swapped dimension order
-      auto qaer_cur_tmp = aero_config.create_mode_species_view(team);
-      auto qaer_delsub_grow4rnam_tmp = aero_config.create_mode_species_view(team);
-      auto qaercw_cur_tmp = aero_config.create_mode_species_view(team);
-      auto qaercw_delsub_grow4rnam_tmp = aero_config.create_mode_species_view(team);
+      auto qaer_cur_tmp = create_mode_species_view(team, aero_config);
+      auto qaer_delsub_grow4rnam_tmp = create_mode_species_view(team, aero_config);
+      auto qaercw_cur_tmp = create_mode_species_view(team, aero_config);
+      auto qaercw_delsub_grow4rnam_tmp = create_mode_species_view(team, aero_config);
       for (int is = 0; is < nspecies; ++is) {
         for (int im = 0; im < nmodes; ++im) {
           qaer_cur_tmp(im, is) = qaer_cur[is][im];
@@ -1537,7 +1537,7 @@ void mam_amicphys_1subarea(
       // copy the output back to the variables
       for (int is = 0; is < nspecies; ++is) {
         for (int im = 0; im < nmodes; ++im) {
-          qaer_cur[is][im] = qaer_cur_tmp[im][is];
+          qaer_cur(is, im) = qaer_cur_tmp[im][is];
           qaer_delsub_grow4rnam[is][im] = qaer_delsub_grow4rnam_tmp[im][is];
           qaercw_cur[is][im] = qaercw_cur_tmp[im][is];
           qaercw_delsub_grow4rnam[is][im] = qaercw_delsub_grow4rnam_tmp[im][is];

@@ -78,6 +78,12 @@ using AeroModeView = ekat::Unmanaged<typename DeviceType::view_1d<Real>>;
 /// team.
 using AeroModeSpeciesView = ekat::Unmanaged<typename DeviceType::view_2d<Real>>;
 
+/// A GasView is a rank-1 Kokkos View whose single index indentifies a
+/// quantity associated with a gas species. GasViews are created from a thread
+/// team's memory scratch pad, so they are unmanaged views that can only be used
+/// during the lifetime of their team.
+using GasView = ekat::Unmanaged<typename DeviceType::view_1d<Real>>;
+
 } // namespace mam4
 
 #endif
