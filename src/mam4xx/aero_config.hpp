@@ -690,7 +690,7 @@ void set_scratch_size(ThreadTeamPolicy &team_policy,
                       scratch_config.per_thread.num_mode_species_views * mode_species_view_size +
                       scratch_config.per_thread.num_gas_views * gas_view_size;
   size_t per_team = scratch_config.per_team.num_mode_views * mode_view_size + 
-                    scratch_config.per_team.num_mode_species_views * mode_species_view_size;
+                    scratch_config.per_team.num_mode_species_views * mode_species_view_size +
                     scratch_config.per_team.num_gas_views * gas_view_size;
   team_policy.set_scratch_size(1, Kokkos::PerThread(per_thread), Kokkos::PerTeam(per_team));
 }

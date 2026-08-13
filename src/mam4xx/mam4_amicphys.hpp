@@ -1243,8 +1243,7 @@ void mam_amicphys_1subarea(
   // Initializ mixing ratios with the before-amicphys values
   //----------------------------------------------------------
 
-  copy_1d_array(max_gas(), qgas3, // in
-                qgas_cur);        // out
+  Kokkos::deep_copy(qgas_cur, qgas3);
 
   constexpr int nspecies = num_aerosol_ids;
   constexpr int nmodes = num_modes;
@@ -1347,10 +1346,8 @@ void mam_amicphys_1subarea(
     Real uptkrate_h2so4 = 0;
 
     if (do_cond_sub) {
-      copy_1d_array(max_gas(), qgas_cur, // in
-                    qgas_sv1);           // out
-      copy_1d_array(nmodes, qnum_cur,    // in
-                    qnum_sv1);           // out
+      Kokkos::deep_copy(qgas_sv1, qgas_cur);
+      Kokkos::deep_copy(qnum_sv1, qnum_cur);
 
       copy_2d_array(nspecies, nmodes, &qaer_cur[0][0], // in
                     &qaer_sv1[0][0]);                  // out
