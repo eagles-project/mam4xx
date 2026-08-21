@@ -78,3 +78,16 @@ However, some non-obvious choices and configurations are listed here.
   - **Expires 11 April 2026**
   - One token used fetch and read repository information via the API.
   - **Expires 2 May 2025**
+
+These tokens are needed in the `runner.*` files in the `m4xci-snl-cuda-autotester2` directory in `mam4xx`'s home directory on `blake`.
+
+### Debugging
+
+*Issue:* Pipelines are hanging waiting to be picked up by a runner
+
+- *Fix:* Login to `blake` as `mam4xx`. Must ssh as `mam4xx`. Logging in as yourself then `su`-ing to `mam4xx` will not reactivate the account or give the proper environment (`systemctl` will not work)
+
+
+*Issue:* "401 Bad Credentials" error being thrown on the `snl_verify` script
+
+- *Fix:* Update the tokens. As the `mam4xxSNL` account on GitHub, there are two PATs. Regenerate those and update their values on `blake`.
