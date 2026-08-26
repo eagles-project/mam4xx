@@ -50,6 +50,8 @@ void mode_hygroscopicity_i(const AeroSpeciesView &aero_species,
     }
   }
   diags.hygroscopicity[mode_idx](k) = hyg / volume_mixing_ratio;
+  printf("mode_hygroscopicity_i\n");
+  printf("diags.hygroscopicity[%d](%d) = %g\n", mode_idx, k, diags.hygroscopicity[mode_idx](k));
 }
 
 ///  Compute the modal average hygroscopicity for all modes.

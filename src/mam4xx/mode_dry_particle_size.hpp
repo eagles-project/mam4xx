@@ -48,6 +48,8 @@ void mode_avg_dry_particle_diam(const AeroSpeciesView &aero_species,
   }
   const Real mean_vol_i = volume_mixing_ratio_i / progs.n_mode_i[mode_idx](k);
   const Real mean_vol_c = volume_mixing_ratio_c / progs.n_mode_c[mode_idx](k);
+  printf("Computing mode_avg_dry_particle_diam\n");
+  printf("mean_vol_i = %g, mean_vol_c = %g\n", mean_vol_i, mean_vol_c);
   diags.dry_geometric_mean_diameter_i[mode_idx](k) =
       conversions::mean_particle_diameter_from_volume(
           mean_vol_i, modes(mode_idx).mean_std_dev);

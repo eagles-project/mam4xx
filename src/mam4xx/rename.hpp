@@ -596,6 +596,10 @@ public:
     _mass_2_vol[iaer_pom] = config_._molecular_weight_pom /
                             aero_species_h(int(AeroId::POM)).density;
 
+     printf("Rename init\n");
+     printf("mass_2_vol[soa] = %g, mass_2_vol[so4] = %g, mass_2_vol[pom] = %g\n",
+      _mass_2_vol[iaer_soa], _mass_2_vol[iaer_so4], _mass_2_vol[iaer_pom]);                        
+
   } // end(init)
 
   // NOTE: this corresponds to mam_rename_1subarea() in the fortran refactor
