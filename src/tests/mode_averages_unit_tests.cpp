@@ -12,7 +12,6 @@
 #include <mam4xx/conversions.hpp>
 #include <mam4xx/floating_point.hpp>
 #include <mam4xx/mam4_types.hpp>
-#include <mam4xx/mode_wet_particle_size.hpp>
 
 #include <catch2/catch.hpp>
 
@@ -215,11 +214,6 @@ TEST_CASE("modal_averages", "") {
 
     logger.info("relative humidity range = [{}, {}]", rh_mm.min_val,
                 rh_mm.max_val);
-
-    Kokkos::parallel_for(
-        "compute_wet_particle_size", nlev, KOKKOS_LAMBDA(const int i) {
-          mode_avg_wet_particle_diam_water_uptake(diags, atm, i);
-        });
 
     for (int m = 0; m < 4; ++m) {
       auto h_dry_diam =
