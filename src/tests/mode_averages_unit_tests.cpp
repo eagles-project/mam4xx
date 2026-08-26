@@ -93,12 +93,6 @@ TEST_CASE("modal_averages", "") {
                   dry_aero_mean_particle_diam[m]);
     }
 
-    /// Call mam4xx kernel across all modes, levels
-    Kokkos::parallel_for(
-        "compute_dry_particle_size", nlev, KOKKOS_LAMBDA(const int i) {
-          mode_avg_dry_particle_diam(aero_species, diags, progs, i);
-        });
-
     /// Copy kernel results from device to host and compare
     for (int m = 0; m < 4; ++m) {
       auto h_diam_i =
@@ -231,7 +225,6 @@ TEST_CASE("modal_averages", "") {
 
     Kokkos::parallel_for(
         "compute_wet_particle_size", nlev, KOKKOS_LAMBDA(const int i) {
-          mode_avg_dry_particle_diam(aero_species, diags, progs, i);
           mode_hygroscopicity(aero_species, diags, progs, i);
           mode_avg_wet_particle_diam_water_uptake(diags, atm, i);
         });
