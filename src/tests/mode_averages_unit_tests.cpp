@@ -12,8 +12,6 @@
 #include <mam4xx/conversions.hpp>
 #include <mam4xx/floating_point.hpp>
 #include <mam4xx/mam4_types.hpp>
-#include <mam4xx/mode_dry_particle_size.hpp>
-#include <mam4xx/mode_hygroscopicity.hpp>
 #include <mam4xx/mode_wet_particle_size.hpp>
 
 #include <catch2/catch.hpp>
@@ -160,11 +158,6 @@ TEST_CASE("modal_averages", "") {
                   mode_str(static_cast<mam4::ModeIndex>(m)), hygro[m]);
     }
 
-    Kokkos::parallel_for(
-        "compute_hygroscopicity", nlev, KOKKOS_LAMBDA(const int i) {
-          mode_hygroscopicity(aero_species, diags, progs, i);
-        });
-
     for (int m = 0; m < 4; ++m) {
       auto h_hyg = Kokkos::create_mirror_view(diags.hygroscopicity[m]);
       Kokkos::deep_copy(h_hyg, diags.hygroscopicity[m]);
@@ -225,7 +218,6 @@ TEST_CASE("modal_averages", "") {
 
     Kokkos::parallel_for(
         "compute_wet_particle_size", nlev, KOKKOS_LAMBDA(const int i) {
-          mode_hygroscopicity(aero_species, diags, progs, i);
           mode_avg_wet_particle_diam_water_uptake(diags, atm, i);
         });
 
