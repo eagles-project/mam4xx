@@ -74,12 +74,22 @@ However, some non-obvious choices and configurations are listed here.
 ### Tokens
 
 - AT2 requires 2 fine-grained tokens for the **mam4xxSNL** account from the `eagles-project` GitHub Organization in order to access information related to the `mam4xx` repo.
-  - One token used to fetch and read/write runner information.
-  - **Expires 11 April 2026**
-  - One token used fetch and read repository information via the API.
-  - **Expires 2 May 2025**
 
-These tokens are needed in the `runner.*` files in the `m4xci-snl-cuda-autotester2` directory in `mam4xx`'s home directory on `blake`.
+To manage the tokens, go to `mam4xxSNL`'s GitHub account under Settings > Developer settings > Personal access tokens > Fine-grained tokens.
+
+`TOKEN_TO_FETCH_RUNNER_TOKEN`
+  - Token used to fetch and read/write runner information.
+  - **Expires 16 April 2027**
+
+`REPO_API_TOKEN`
+  - Token used fetch and read repository information via the API.
+  - **Expires 22 August 2027**
+
+There is a button to regenerate these tokens to a new value and to refresh the expiration date for another year. The regenerated values will need to be saved and copied to `blake`. These tokens are needed in the `runner.*` files in the `m4xci-snl-cuda-autotester2` directory in `mam4xx`'s home directory on `blake`.
+
+`TOKEN_TO_FETCH_RUNNER_TOKEN` is in `runner.t`.
+
+`REPO_API_TOKEN` is the value for both `REPO_API_TOKEN` and `WHITELIST_API_TOKEN` in `runner.env`.
 
 ### Debugging
 
