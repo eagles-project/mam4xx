@@ -73,6 +73,8 @@ However, some non-obvious choices and configurations are listed here.
 
 ### Tokens
 
+**NOTE: We need to update this to reflect the transfer of the repository from the eagles-project GitHub org to E3SM-Project.**
+
 - AT2 requires 2 fine-grained tokens for the **mam4xxSNL** account from the `eagles-project` GitHub Organization in order to access information related to the `mam4xx` repo.
 
 To manage the tokens, go to `mam4xxSNL`'s GitHub account under Settings > Developer settings > Personal access tokens > Fine-grained tokens.

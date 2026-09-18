@@ -160,15 +160,15 @@ if (MAM4XX_ENABLE_SKYWALKER)
   set(SKYWALKER_PRECISION ${MAM4XX_PRECISION})
   FetchContent_Declare(
     skywalker
-    GIT_REPOSITORY https://github.com/eagles-project/skywalker.git
-    GIT_TAG        6d91b61bb630189cdcea3cc86aac42a463205bf2 # 2026/04/15
+    GIT_REPOSITORY https://github.com/E3SM-Project/skywalker.git
+    GIT_TAG        aa5f192690be6f8ca657b40b4895b1b5e43ec063 # 2026/09/18
   )
   list(APPEND mam4xx_tpls skywalker)
 
   # bring in MAM4 Fortran validation datasets
   FetchContent_Declare(
     mam_x_validation
-    GIT_REPOSITORY https://github.com/eagles-project/mam_x_validation.git
+    GIT_REPOSITORY https://github.com/E3SM-Project/mam_x_validation.git
     GIT_TAG        8abea036f30f1d4c3005b205169bd2d4c0a701c3 # 2026/04/23
   )
   list(APPEND mam4xx_tpls mam_x_validation)

@@ -26,13 +26,13 @@ asynchronous team communication:
 * `eagles-mam-cpp`: This is the best channel for discussing and troubleshooting
   issues related to MAM4xx development.
 * `eagles_mamrefactor`: In this channel, you can ask questions about the
-  [MAM4 box model](https://github.com/eagles-project/mam_refactor) used for
+  [MAM4 box model](https://github.com/kaizhangpnl/MAM_box_model) used for
   porting MAM4's aerosol microphysics parameterizations.
 
 If you're not already on the `ESMD-BER` Slack workspace, please ask a team
 member to send you an invitation.
 
-If you like, you can also create issues in the [MAM4xx repository](https://github.com/eagles-project/mam4xx)
+If you like, you can also create issues in the [MAM4xx repository](https://github.com/E3SM-Project/mam4xx)
 itself.
 
 ## The Big Picture
@@ -158,7 +158,7 @@ The most interesting of these data types is the `AeroProcess` class template.
    used by aerosol processes, like `Prognostics` (prognostic variables),
    `Diagnostics` (diagnostic variables), and `Tendencies` (rates of change for
    prognostic variables). In MAM4xx, we use the
-   [`mam4::AeroConfig`](https://github.com/eagles-project/mam4xx/blob/main/src/aero_config.hpp)
+   [`mam4::AeroConfig`](https://github.com/E3SM-Project/mam4xx/blob/main/src/aero_config.hpp)
    type for the `AerosolConfig` template parameter for all `AeroProcess` types.
 2. `AerosolProcessImpl`, which implements the behavior for an `AeroProcess` type
    in several methods, including
@@ -176,8 +176,8 @@ When we say we're porting MAM4 to C++ from Fortran, we're talking about
 writing an `AerosolProcessImpl` class for each of the aerosol processes in MAM4
 and filling the `compute_tendencies` method with the relevant ported Fortran
 code. To see specific examples of aerosol process implementations, take a look
-at the [`mam4::Nucleation`](https://github.com/eagles-project/mam4xx/blob/main/src/nucleation.hpp)
-and [`mam4::GasAerExch`](https://github.com/eagles-project/mam4xx/blob/main/src/gasaerexch.hpp)
+at the [`mam4::Nucleation`](https://github.com/E3SM-Project/mam4xx/blob/main/src/nucleation.hpp)
+and [`mam4::GasAerExch`](https://github.com/E3SM-Project/mam4xx/blob/main/src/gasaerexch.hpp)
 classes, which implement nucleation and gas-aerosol exchange (a.k.a. "condensation").
 
 ## C++ Guidelines
@@ -397,6 +397,6 @@ describes the computational grid(s) used by EAMxx.
 * [E3SM website](https://e3sm.org)
 * [Kokkos documentation](https://kokkos.github.io/kokkos-core-wiki/)
 * [LLVM C++ Style Guide](https://llvm.org/docs/CodingStandards.html)
-* [MAM4 box model repository](https://github.com/eagles-project/mam_refactor)
+* [MAM4 box model repository](https://github.com/kaizhangpnl/MAM_box_model)
 * [SCREAM (EAMxx) repository](https://github.com/E3SM-Project/scream)
-* [Skywalker documentation](https://eagles-project.github.io/skywalker/)
+* [Skywalker documentation](https://E3SM-Project.github.io/skywalker/)
