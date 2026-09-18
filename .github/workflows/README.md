@@ -6,7 +6,7 @@ Additionally, any helpful notes and TODOs may be kept here to assist developers.
 ## Overview
 
 We use [GitHub Actions](https://docs.github.com/en/actions) to drive our testing.[^gh-actions-ref]
-To do this, testing is initialized via the top-level workflow, `MAM4xx Autotester`, which is triggered by either a pull request (PR), events related to that PR, nightly, or manually from the repository's [**Actions**](https://github.com/eagles-project/mam4xx/actions) page (see the section on [triggers](#triggering-the-testing-workflow), below, for more details).
+To do this, testing is initialized via the top-level workflow, `MAM4xx Autotester`, which is triggered by either a pull request (PR), events related to that PR, nightly, or manually from the repository's [**Actions**](https://github.com/E3SM-Project/mam4xx/actions) page (see the section on [triggers](#triggering-the-testing-workflow), below, for more details).
 
 ### Test Hardware and Compiler Configurations
 
@@ -54,9 +54,9 @@ Based on the trigger and/or inputs, `MAM4xx Autotester` dispatches sub-workflows
     - **Precision:** `[single, double]`
     - **Build Type:** `[Debug, Release]`
 - The unit/validation tests that are run are determined by the MAM4xx CMake/CTest configuration.
-- The `[double, Debug]` test configuration also includes a code coverage check, followed by uploading the report to [codecov.io](https://app.codecov.io/gh/eagles-project/mam4xx).
+- The `[double, Debug]` test configuration also includes a code coverage check, followed by uploading the report to [codecov.io](https://app.codecov.io/gh/E3SM-Project/mam4xx).
     - If triggered by a PR, a comment is added to the PR Conversation that summarizes the Codecov report.
-    - See this [PR comment](https://github.com/eagles-project/mam4xx/pull/437#issuecomment-2842974905) for an example.
+    - See this [PR comment](https://github.com/E3SM-Project/mam4xx/pull/437#issuecomment-2842974905) for an example.
 
 #### `clang-format` Check
 
@@ -111,7 +111,7 @@ SNL prohibits individuals from running code on their machines unless the individ
 
 ###### Details
 
-To satisfy the above restrictions, there are 2 GitHub Teams that are a part of the `eagles-project` GitHub Project.
+To satisfy the above restrictions, there are 2 GitHub Teams that are a part of the `E3SM-Project` GitHub Project.
 
 - `snl-testing`
   - These are developers that have valid SNL user accounts on the target machines.

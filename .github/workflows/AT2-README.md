@@ -73,7 +73,7 @@ However, some non-obvious choices and configurations are listed here.
 
 ### Tokens
 
-- AT2 requires 2 fine-grained tokens for the **mam4xxSNL** account from the `eagles-project` GitHub Organization in order to access information related to the `mam4xx` repo.
+- AT2 requires 2 fine-grained tokens for the **mam4xxSNL** account from the `E3SM-Project` GitHub Organization in order to access information related to the `mam4xx` repo.
   - One token used to fetch and read/write runner information.
   - **Expires 11 April 2026**
   - One token used fetch and read repository information via the API.

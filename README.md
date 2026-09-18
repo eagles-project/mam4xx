@@ -1,7 +1,7 @@
 # MAM4xx
 
-[![Build Status](https://github.com/eagles-project/mam4xx/workflows/auto_test/badge.svg)](https://github.com/eagles-project/mam4xx/actions)
-[![Code Coverage](https://codecov.io/gh/eagles-project/mam4xx/branch/main/graph/badge.svg?token=OI33WNBS7N)](https://codecov.io/gh/eagles-project/mam4xx)
+[![Build Status](https://github.com/E3SM-Project/mam4xx/workflows/auto_test/badge.svg)](https://github.com/E3SM-Project/mam4xx/actions)
+[![Code Coverage](https://codecov.io/gh/E3SM-Project/mam4xx/branch/main/graph/badge.svg?token=OI33WNBS7N)](https://codecov.io/gh/E3SM-Project/mam4xx)
 
 This repository contains the source code for a performance-portable C++
 implementation of the MAM4 modal aerosol model (with 4 fixed modes).
@@ -105,7 +105,7 @@ You can skip this step if you just ran `build.sh`.
 
 ### Checking C++ formatting, and auto-formatting
 
-Our C++ style rules are described in the [MAM4xx developer guide](https://github.com/eagles-project/mam4xx/blob/main/docs/development.md).
+Our C++ style rules are described in the [MAM4xx developer guide](https://github.com/E3SM-Project/mam4xx/blob/main/docs/development.md).
 We enforce them using `clang-format`. If you have the correct version of
 `clang-format` installed, you can use the following targets to check and fix
 all C++ code in the `src` subdirectory:
@@ -159,7 +159,7 @@ documentation, you must download `mkdocs` and its Material theme:
 Then, run `mkdocs serve` from the root directory of your MAM4xx repo,
 and point your browser to [`http://localhost:8000`](http://localhost:8000).
 
-You can also view the [MAM4xx developer guide](https://github.com/eagles-project/mam4xx/blob/main/docs/development.md)
+You can also view the [MAM4xx developer guide](https://github.com/E3SM-Project/mam4xx/blob/main/docs/development.md)
 on GitHub.
 
 ## Disclaimer

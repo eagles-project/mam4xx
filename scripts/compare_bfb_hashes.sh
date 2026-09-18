@@ -72,9 +72,9 @@ main() {
 
   # clone repos into the temporary directory
 
-  clone_repo eagles-project/mam4xx $branch1 $temp_dir/$branch1 &
+  clone_repo E3SM-Project/mam4xx $branch1 $temp_dir/$branch1 &
   pid1=$!
-  clone_repo eagles-project/mam4xx $branch2 $temp_dir/$branch2 &
+  clone_repo E3SM-Project/mam4xx $branch2 $temp_dir/$branch2 &
   pid2=$!
 
   wait $pid1

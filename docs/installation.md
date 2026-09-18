@@ -31,16 +31,16 @@ brew install cmake openmpi
 
 ## Clone the MAM4xx Repository
 
-First, go get the [source code](https://github.com/eagles-project/mam4xx)
+First, go get the [source code](https://github.com/E3SM-Project/mam4xx)
 at GitHub:
 
 === "SSH"
     ```bash
-    git clone git@github.com:eagles-project/mam4xx.git
+    git clone git@github.com:E3SM-Project/mam4xx.git
     ```
 === "HTTPS"
     ```bash
-    git clone https://github.com/eagles-project/mam4xx.git
+    git clone https://github.com/E3SM-Project/mam4xx.git
     ```
 
 This places a `mam4xx` folder into your current path.

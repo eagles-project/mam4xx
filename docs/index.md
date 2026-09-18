@@ -18,6 +18,6 @@ created for the [EAGLES project](https://climatemodeling.science.energy.gov/proj
 an effort to improve the treatment of aerosols in
 [E3SM](https://climatemodeling.science.energy.gov/projects/energy-exascale-earth-system-model),
 the Department of Energy's global climate model. The source code is available on
-[GitHub](https://github.com/eagles-project/mam4xx). This effort was funded by
+[GitHub](https://github.com/E3SM-Project/mam4xx). This effort was funded by
 the Office of Science's [Biological and Environmental
 Research](https://science.osti.gov/ber) Program.
