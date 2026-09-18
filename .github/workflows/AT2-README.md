@@ -73,8 +73,33 @@ However, some non-obvious choices and configurations are listed here.
 
 ### Tokens
 
-- AT2 requires 2 fine-grained tokens for the **mam4xxSNL** account from the `E3SM-Project` GitHub Organization in order to access information related to the `mam4xx` repo.
-  - One token used to fetch and read/write runner information.
-  - **Expires 11 April 2026**
-  - One token used fetch and read repository information via the API.
-  - **Expires 2 May 2025**
+**NOTE: We need to update this to reflect the transfer of the repository from the eagles-project GitHub org to E3SM-Project.**
+
+- AT2 requires 2 fine-grained tokens for the **mam4xxSNL** account from the `eagles-project` GitHub Organization in order to access information related to the `mam4xx` repo.
+
+To manage the tokens, go to `mam4xxSNL`'s GitHub account under Settings > Developer settings > Personal access tokens > Fine-grained tokens.
+
+`TOKEN_TO_FETCH_RUNNER_TOKEN`
+  - Token used to fetch and read/write runner information.
+  - **Expires 16 April 2027**
+
+`REPO_API_TOKEN`
+  - Token used fetch and read repository information via the API.
+  - **Expires 22 August 2027**
+
+There is a button to regenerate these tokens to a new value and to refresh the expiration date for another year. The regenerated values will need to be saved and copied to `blake`. These tokens are needed in the `runner.*` files in the `m4xci-snl-cuda-autotester2` directory in `mam4xx`'s home directory on `blake`.
+
+`TOKEN_TO_FETCH_RUNNER_TOKEN` is in `runner.t`.
+
+`REPO_API_TOKEN` is the value for both `REPO_API_TOKEN` and `WHITELIST_API_TOKEN` in `runner.env`.
+
+### Debugging
+
+*Issue:* Pipelines are hanging waiting to be picked up by a runner
+
+- *Fix:* Login to `blake` as `mam4xx`. Must ssh as `mam4xx`. Logging in as yourself then `su`-ing to `mam4xx` will not reactivate the account or give the proper environment (`systemctl` will not work)
+
+
+*Issue:* "401 Bad Credentials" error being thrown on the `snl_verify` script
+
+- *Fix:* Update the tokens. As the `mam4xxSNL` account on GitHub, there are two PATs. Regenerate those and update their values on `blake`.
