@@ -325,7 +325,7 @@ KOKKOS_INLINE_FUNCTION void newton_raphson_iter(
         return;
       }
     } // end if (nr_iter > 0)
-  } // end nr_iter loop
+  }   // end nr_iter loop
 } // newton_raphson_iter() function
 template <typename VectorType>
 KOKKOS_INLINE_FUNCTION ImpSolResult
@@ -516,7 +516,7 @@ imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
         result.outcome = ImpSolOutcome::CutLimitExhausted;
         return result;
       } //  cut_cnt < cut_limit
-    } // non-convergence
+    }   // non-convergence
 
     // -----------------------------------------------------------------------
     // ... commit the converged trial and check for interval done
@@ -556,7 +556,7 @@ imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
       dt = mam4::min(dt, delt - interval_done);
 
     } // abs( delt - interval_done ) <= .0001
-  } // time_step_loop
+  }   // time_step_loop
 
   result.outcome = ImpSolOutcome::MaximumStepsExhausted;
   return result;

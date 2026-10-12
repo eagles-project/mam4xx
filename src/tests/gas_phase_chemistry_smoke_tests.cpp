@@ -48,13 +48,13 @@ TEST_CASE("configured gas chemistry solver runs three timesteps",
 
         // Prescribed M, N2, O2, H2O, OH, NO3, HO2, O3 [molecules cm^-3].
         Real invariants[nfs] = {Real(2.5e19), Real(1.95e19), Real(5.25e18),
-                               Real(1e17),   Real(1e6),    Real(1e7),
-                               Real(1e8),    Real(1e12)};
+                                Real(1e17),   Real(1e6),     Real(1e7),
+                                Real(1e8),    Real(1e12)};
 
         for (int step = 1; step <= steps; ++step) {
-          mam4::microphysics::gas_phase_chemistry(
-              Real(300), Real(60), photo_rates, forcing, invariants, het_rates,
-              state);
+          mam4::microphysics::gas_phase_chemistry(Real(300), Real(60),
+                                                  photo_rates, forcing,
+                                                  invariants, het_rates, state);
           for (int j = 0; j < gas_pcnst; ++j) {
             history(step * gas_pcnst + j) = state[j];
           }
