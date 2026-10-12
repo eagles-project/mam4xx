@@ -30,10 +30,12 @@ void imp_sol(Ensemble *ensemble) {
       factor[i] = true;
     }
 
-    ImpSolResult result;
-    imp_sol(base_sol, //    ! species mixing ratios [vmr]
-            reaction_rates.data(), het_rates.data(), extfrc.data(), delt,
-            factor, epsilon, prod_out.data(), loss_out.data(), result);
+    const auto result =
+        imp_sol(base_sol, //    ! species mixing ratios [vmr]
+                reaction_rates.data(), het_rates.data(), extfrc.data(), delt,
+                factor, epsilon, prod_out.data(), loss_out.data());
+    EKAT_REQUIRE_MSG(result.success(),
+                     "imp_sol did not complete the requested interval.");
 
     output.set("base_sol", base_sol);
   });

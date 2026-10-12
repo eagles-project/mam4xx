@@ -258,12 +258,13 @@ KOKKOS_INLINE_FUNCTION void newton_raphson_iter(
   }   // end nr_iter loop
 } // newton_raphson_iter() function
 template <typename VectorType>
-KOKKOS_INLINE_FUNCTION void
+KOKKOS_INLINE_FUNCTION ImpSolResult
 imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
         const Real reaction_rates[rxntot], const Real het_rates[gas_pcnst],
         const Real extfrc[extcnt], const Real &delt, const bool factor[itermax],
-        Real epsilon[clscnt4], Real prod_out[clscnt4], Real loss_out[clscnt4],
-        ImpSolResult &result) {
+        Real epsilon[clscnt4], Real prod_out[clscnt4], Real loss_out[clscnt4]) {
+
+  ImpSolResult result;
 
   constexpr auto clsmap_4 = gas_chemistry::clsmap_4;
   constexpr auto permute_4 = gas_chemistry::permute_4;
@@ -316,7 +317,7 @@ imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
   }
   if (!input_is_finite) {
     result.outcome = ImpSolOutcome::InvalidInput;
-    return;
+    return result;
   }
 
   Real ind_prd[clscnt4] = {};
@@ -418,7 +419,7 @@ imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
     if (!trial_is_finite) {
       result.failed_attempts += 1;
       result.outcome = ImpSolOutcome::NonfiniteIterate;
-      return;
+      return result;
     }
 
     // -----------------------------------------------------------------------
@@ -443,7 +444,7 @@ imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
         continue;
       } else {
         result.outcome = ImpSolOutcome::CutLimitExhausted;
-        return;
+        return result;
       } //  cut_cnt < cut_limit
     }   // non-convergence
 
@@ -468,7 +469,7 @@ imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
       result.outcome = result.failed_attempts == 0
                            ? ImpSolOutcome::Converged
                            : ImpSolOutcome::ConvergedAfterRetry;
-      return;
+      return result;
     } else {
       // -----------------------------------------------------------------------
       //  ... transfer latest solution back to base array
@@ -488,6 +489,7 @@ imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
   }   // time_step_loop
 
   result.outcome = ImpSolOutcome::MaximumStepsExhausted;
+  return result;
 } // imp_sol
 
 } // namespace gas_chemistry
