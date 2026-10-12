@@ -2,7 +2,13 @@
 #define MAM4XX_MICROPHYSICS_GAS_CHEMISTRY_HPP
 
 #include "gas_chem.hpp"
+#include "gas_chem_legacy.hpp"
 #include "mo_photo.hpp"
+
+#if defined(MAM4XX_GAS_CHEMISTRY_SOLVER_LEGACY) ==                             \
+    defined(MAM4XX_GAS_CHEMISTRY_SOLVER_DIRECT)
+#error "Exactly one MAM4xx gas-chemistry solver must be configured"
+#endif
 
 namespace mam4 {
 
@@ -42,10 +48,11 @@ using mam4::gas_chemistry::indexm;
 // modal-number entries 6-30 retain the caller's legacy work-array conversions;
 // their precise physical units should not be inferred from the gas entries.
 // Review needed: reconcile the legacy modal-number unit/conversion conventions.
-// Any rejected full-step update leaves qq unchanged and aborts this
-// model-facing call with a reason-specific message. Lower-level validation code
-// can call gas_chemistry::imp_sol directly when it needs to inspect the
-// outcome.
+// The direct solver publishes state only after the full step succeeds. The
+// legacy solver publishes each accepted internal substep but never a failed
+// trial. Either solver aborts this model-facing call with a reason-specific
+// message when it does not complete the requested interval. Lower-level code
+// can call the selected namespace's imp_sol directly to inspect its outcome.
 template <typename VectorType>
 KOKKOS_INLINE_FUNCTION void gas_phase_chemistry(
     // in
@@ -105,11 +112,47 @@ KOKKOS_INLINE_FUNCTION void gas_phase_chemistry(
     reaction_rates[i] = photo_rates[i];
   }
 
-  // Solve one full backward-Euler timestep with fixed rates and forcing.
-  // imp_sol leaves qq unchanged on failure. Fail here so the model cannot
-  // silently continue from a rejected chemistry step.
   using mam4::gas_chemistry::clscnt4;
   Real prod_out[clscnt4], loss_out[clscnt4];
+
+#if defined(MAM4XX_GAS_CHEMISTRY_SOLVER_LEGACY)
+  // Apply the corrected PR #586 legacy solver. Each accepted internal substep
+  // is committed, while a failed trial is discarded. Fail here if the full
+  // requested interval was not completed.
+  bool factor[gas_chemistry::legacy::itermax];
+  for (int i = 0; i < gas_chemistry::legacy::itermax; ++i) {
+    factor[i] = true;
+  }
+  Real epsilon[clscnt4];
+  gas_chemistry::legacy::imp_slv_inti(epsilon);
+  const auto result = gas_chemistry::legacy::imp_sol(
+      qq, reaction_rates, het_rates, extfrc_rates, dt, factor, epsilon,
+      prod_out, loss_out);
+  switch (result.outcome) {
+  case gas_chemistry::legacy::ImpSolOutcome::Converged:
+  case gas_chemistry::legacy::ImpSolOutcome::ConvergedAfterRetry:
+    return;
+  case gas_chemistry::legacy::ImpSolOutcome::InvalidInput:
+    Kokkos::abort("gas_phase_chemistry: invalid input to the legacy solver; "
+                  "the requested chemistry interval was not completed");
+  case gas_chemistry::legacy::ImpSolOutcome::NonfiniteIterate:
+    Kokkos::abort("gas_phase_chemistry: the legacy solver produced NaN or "
+                  "infinity; the requested chemistry interval was not "
+                  "completed");
+  case gas_chemistry::legacy::ImpSolOutcome::CutLimitExhausted:
+    Kokkos::abort("gas_phase_chemistry: the legacy solver exhausted its "
+                  "timestep cuts; the requested chemistry interval was not "
+                  "completed");
+  case gas_chemistry::legacy::ImpSolOutcome::MaximumStepsExhausted:
+    Kokkos::abort("gas_phase_chemistry: the legacy solver exhausted its "
+                  "internal steps; the requested chemistry interval was not "
+                  "completed");
+  }
+  Kokkos::abort("gas_phase_chemistry: unknown legacy solver outcome; the "
+                "requested chemistry interval was not completed");
+#elif defined(MAM4XX_GAS_CHEMISTRY_SOLVER_DIRECT)
+  // Solve one full backward-Euler timestep with fixed rates and forcing. The
+  // direct solver leaves qq unchanged on failure.
   const auto outcome = mam4::gas_chemistry::imp_sol(
       qq, reaction_rates, het_rates, extfrc_rates, dt, prod_out, loss_out);
   switch (outcome) {
@@ -130,6 +173,7 @@ KOKKOS_INLINE_FUNCTION void gas_phase_chemistry(
   }
   Kokkos::abort("gas_phase_chemistry: unknown solver outcome; chemistry state "
                 "was left unchanged");
+#endif
 }
 
 } // namespace microphysics
