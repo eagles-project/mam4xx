@@ -47,6 +47,7 @@ constexpr int nddvels = mam4::seq_drydep::n_drydep;
 // find_season_index_at_clat only needs to be executed one time and is small.
 // Thus, execute it only on the host.
 using View1DHost = DeviceType::view_1d<Real>::host_mirror_type;
+using ConstView1D = DeviceType::view_1d<const Real>;
 using ConstView1DHost = DeviceType::view_1d<const Real>::host_mirror_type;
 using View1DIntHost = DeviceType::view_1d<int>::host_mirror_type;
 using View2DIntHost = DeviceType::view_2d<int>::host_mirror_type;
@@ -545,12 +546,13 @@ void calculate_resistance_rlux(
   }
 }
 
+template <typename SubView>
 KOKKOS_INLINE_FUNCTION
 void calculate_gas_drydep_vlc_and_flux(
     const seq_drydep::Data &drydep_data, const int beglt, const int endlt,
     const int index_season[n_land_type], const bool fr_lnduse[n_land_type],
     const Real lcl_frc_landuse[n_land_type],
-    const Real mmr[gas_pcnst],      // constituent mmrs at surface [kg/kg]
+    SubView &mmr,                // constituent mmrs at surface [kg/kg]
     const Real dep_ra[n_land_type], // aerodynamic resistance [s/m]
     const Real dep_rb[n_land_type], // sublayer resistance [s/m]
     const Real term,
@@ -561,8 +563,8 @@ void calculate_gas_drydep_vlc_and_flux(
     const Real rclx[gas_pcnst][n_land_type], // lower canopy resistance [s/m]
     const Real rgsx[gas_pcnst][n_land_type], // ground resistance [s/m]
     const Real rdc,         // part of lower canopy resistance [s/m]
-    Real dvel[gas_pcnst],   // deposition velocity [cm/s]
-    Real dflx[gas_pcnst]) { // deposition flux [1/cm^2/s]
+    const View1D &dvel,   // deposition velocity [cm/s]
+    const View1D &dflx) { // deposition flux [1/cm^2/s]
 
   constexpr Real m_to_cm_per_s = 100.0;
   const auto rac = drydep_data.rac;
@@ -631,6 +633,7 @@ Real get_saturation_specific_humidity(const Real temperature, // [K]
   return ws / (1. + ws);
 }
 
+template <typename SubView>
 KOKKOS_INLINE_FUNCTION
 void drydep_xactive(
     const seq_drydep::Data &drydep_data,
@@ -647,10 +650,10 @@ void drydep_xactive(
     const Real spec_hum,                 // specific humidity [kg/kg]
     const Real wind_speed,               // 10-meter wind spped [m/s]
     const Real rain,                     // rain content [??]
-    const Real solar_flux,     // direct shortwave surface radiation [W/m^2]
-    const Real mmr[gas_pcnst], // constituent MMRs [kg/kg]
-    Real dvel[gas_pcnst],      // deposition velocity [cm/s]
-    Real dflx[gas_pcnst]) {    // deposition flux [1/cm^2/s]
+    const Real solar_flux,               // direct shortwave surface radiation [W/m^2]
+    SubView &mmr,                     // constituent MMRs [kg/kg]
+    const View1D &dvel,                     // deposition velocity [cm/s]
+    const View1D &dflx) {                   // deposition flux [1/cm^2/s]
 
   // FIXME: BAD_CONSTANTS
   constexpr Real rain_threshold = 1e-7;   // of the order of 1cm/day [m/s]

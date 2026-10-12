@@ -12,7 +12,6 @@
 //          Mike Schmidt (mjschm@sandia.gov)
 namespace mam4 {
 namespace gas_chemistry {
-
 constexpr int nabscol = 2;    // number of absorbing densities
 constexpr int rxntot = 7;     // number of total reactions
 constexpr int gas_pcnst = 31; // number of gas phase species
@@ -60,8 +59,9 @@ void set_rates(Real rxt_rates[rxntot], Real sol[gas_pcnst]) {
   rxt_rates[6] *= sol[4];
 } // set_rates
 
+template<typename Vector>
 KOKKOS_INLINE_FUNCTION
-void adjrxt(Real rate[rxntot], const Real inv[nfs], const Real m) {
+void adjrxt(Real rate[rxntot], const Vector &inv, const Real m) {
   rate[2] *= inv[4];
   rate[3] *= inv[4];
   rate[4] *= inv[4];
@@ -81,7 +81,7 @@ void adjrxt(Real rate[rxntot], const Real inv[nfs], const Real m) {
 template <typename VectorType>
 KOKKOS_INLINE_FUNCTION void
 imp_prod_loss(Real prod[clscnt4], Real loss[clscnt4], const VectorType &y,
-              const Real rxt[rxntot], const Real het_rates[gas_pcnst]) {
+              const Real rxt[rxntot], const VectorType &het_rates) {
   const Real zero = 0;
   loss[0] = (het_rates[1] + rxt[0] + rxt[2]) * y[1];
   prod[0] = zero;
@@ -226,9 +226,10 @@ void lu_slv(Real lu[nzcnt], Real b[clscnt4]) {
 // TODO: the lines of concern *kind of* bear resemblance to the similarly
 // concerning lines in imp_prod_loss(), though it's difficult to tell if that
 // results in consistent units
+template <typename VectorType>
 KOKKOS_INLINE_FUNCTION
 void linmat(Real mat[nzcnt], const Real rxt[rxntot],
-            const Real het_rates[gas_pcnst]) {
+            const VectorType &het_rates) {
   mat[0] = -(+rxt[0] + rxt[2] + het_rates[1]);
   mat[1] = -(+het_rates[2]);
   mat[2] = +rxt[3];

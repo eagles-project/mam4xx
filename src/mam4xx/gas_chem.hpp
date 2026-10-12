@@ -9,7 +9,7 @@
 namespace mam4 {
 
 namespace gas_chemistry {
-
+using ConstView1D = DeviceType::view_1d<const Real>;
 // BAD CONSTANTs
 constexpr int itermax = 11;
 const Real rel_err = 1.0e-3;
@@ -17,9 +17,10 @@ const Real rel_err = 1.0e-3;
 // const Real high_rel_err = 1.0e-4;
 const int max_time_steps = 1000;
 
+template <typename VectorType>
 KOKKOS_INLINE_FUNCTION
 void usrrxt(Real rxt[rxntot], // inout
-            const Real temperature, const Real invariants[nfs], const Real mtot,
+            const Real temperature, VectorType &invariants, const Real mtot,
             const int usr_HO2_HO2_ndx, const int usr_DMS_OH_ndx,
             const int usr_SO2_OH_ndx, const int inv_h2o_ndx) {
 
@@ -69,12 +70,12 @@ void imp_slv_inti(Real epsilon[clscnt4]) {
     epsilon[i] = rel_err;
   }
 }
-template <typename VectorType>
+template <typename VectorType1, typename VectorType2>
 KOKKOS_INLINE_FUNCTION void newton_raphson_iter(
     const Real dti, const Real lin_jac[nzcnt], const Real lrxt[rxntot],
-    const Real lhet[gas_pcnst],         // in
+    const VectorType1 lhet,         // in
     const Real iter_invariant[clscnt4], // in
-    const bool factor[itermax], VectorType &lsol,
+    const bool factor[itermax], VectorType2 &lsol,
     Real solution[clscnt4],                     // inout
     bool converged[clscnt4], bool &convergence, // out
     Real prod[clscnt4], Real loss[clscnt4], Real max_delta[clscnt4],
@@ -232,7 +233,7 @@ KOKKOS_INLINE_FUNCTION void newton_raphson_iter(
 template <typename VectorType>
 KOKKOS_INLINE_FUNCTION void
 imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
-        const Real reaction_rates[rxntot], const Real het_rates[gas_pcnst],
+        const Real reaction_rates[rxntot], VectorType &het_rates,
         const Real extfrc[extcnt], const Real &delt, const bool factor[itermax],
         Real epsilon[clscnt4], Real prod_out[clscnt4], Real loss_out[clscnt4]) {
 

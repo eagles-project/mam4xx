@@ -40,8 +40,8 @@ template <typename VectorType>
 KOKKOS_INLINE_FUNCTION void gas_phase_chemistry(
     // in
     const Real temp, const Real dt,
-    const Real photo_rates[mam4::mo_photo::phtcnt], const Real extfrc[extcnt],
-    const Real invariants[nfs], const Real het_rates[gas_pcnst],
+    VectorType &photo_rates, VectorType &extfrc,
+    VectorType &invariants, VectorType &het_rates,
     // out
     VectorType &qq) {
 

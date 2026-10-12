@@ -9,7 +9,6 @@
 namespace mam4 {
 
 namespace mo_setsox {
-
 // mo_setsox-specific configuration
 struct Config {
 
@@ -85,9 +84,10 @@ struct Cloudconc {
   Real so4_fact;
 };
 
+template<typename Vector>
 KOKKOS_INLINE_FUNCTION
 Cloudconc sox_cldaero_create_obj(
-    const Real cldfrc, const Real qcw[AeroConfig::num_gas_phase_species()],
+    const Real cldfrc, const Vector &qcw,
     const Real lwc, const Real cfact, const int loffset, const Config config_) {
   /*
   input variables
@@ -521,8 +521,9 @@ void calc_sox_aqueous(const bool modal_aerosols, const Real rah2o2,
 } // end calc_sox_aqueous
 
 // =============================================================================
+template<typename Vector>
 KOKKOS_INLINE_FUNCTION
-void compute_aer_factor(const Real *tmr, const int loffset,
+void compute_aer_factor(const Vector &tmr, const int loffset,
                         const Config config_,
                         // out
                         Real faqgain_so4[AeroConfig::num_modes()]) {
@@ -729,6 +730,7 @@ void update_tmr_nonzero(Real &tmr, const int idx) {
 } // end update_tmr_nonzero
 
 //=================================================================================
+template<typename Vector>
 KOKKOS_INLINE_FUNCTION
 void sox_cldaero_update(const int loffset, const Real dt, const Real mbar,
                         const Real pdel, const Real press, const Real tfld,
@@ -737,9 +739,10 @@ void sox_cldaero_update(const int loffset, const Real dt, const Real mbar,
                         const Real xh2so4, const Real xso4,
                         const Real xso4_init, const Config config_,
                         // inout
-                        Real dqdt_aqso4[AeroConfig::num_gas_phase_species()],
-                        Real dqdt_aqh2so4[AeroConfig::num_gas_phase_species()],
-                        Real *qcw, Real *qin) {
+                        const ColumnView &dqdt_aqso4,
+                        const ColumnView &dqdt_aqh2so4,
+                        Vector &qcw,
+                        Vector &qin) {
   /*
   sox_cldaero_update(loffset, dt, mbar, pdel, press, tfld, cldnum,
                      cldfrc, cfact, cldconc.xlwc, xdelso4hp, xh2so4, xso4,
@@ -940,16 +943,17 @@ void sox_cldaero_update(const int loffset, const Real dt, const Real mbar,
 
 //-----------------------------------------------------------------------
 //-----------------------------------------------------------------------
+template <typename Vector>
 KOKKOS_INLINE_FUNCTION
 void setsox_single_level(const int loffset, const Real dt, const Real press,
                          const Real pdel, const Real tfld, const Real mbar,
                          const Real lwc, const Real cldfrc, const Real cldnum,
                          const Real xhnm, Config setsox_config_,
                          // inout
-                         Real dqdt_aqso4[AeroConfig::num_gas_phase_species()],
-                         Real dqdt_aqh2so4[AeroConfig::num_gas_phase_species()],
-                         Real qcw[AeroConfig::num_gas_phase_species()],
-                         Real qin[AeroConfig::num_gas_phase_species()]) {
+                         const ColumnView &dqdt_aqso4,
+                         const ColumnView &dqdt_aqh2so4,
+                         Vector &qcw,
+                         Vector &qin) {
 
   // setsox_single_level(loffset, dt, press_k, pdel, tfld_k, mbar, lwc_k,
   //                           cldfrc_k, cldnum_k, xhnm_k, setsox_config_,
@@ -1266,8 +1270,8 @@ void setsox(const ThreadTeam &team, const int loffset, const Real dt,
             const ColumnView &lwc, const ColumnView &cldfrc,
             const ColumnView &cldnum, const ColumnView &xhnm,
             // inout
-            Real dqdt_aqso4[AeroConfig::num_gas_phase_species()],
-            Real dqdt_aqh2so4[AeroConfig::num_gas_phase_species()],
+            const ColumnView dqdt_aqso4,
+            const ColumnView dqdt_aqh2so4,
             const ColumnView qcw[AeroConfig::num_gas_phase_species()],
             const ColumnView qin[AeroConfig::num_gas_phase_species()]) {
 
