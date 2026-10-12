@@ -35,15 +35,16 @@
 namespace mam4 {
 namespace gas_chemistry {
 
-constexpr int nabscol = 2;    // number of absorbing densities
-constexpr int rxntot = 7;     // number of total reactions
-constexpr int gas_pcnst = 31; // gas, aerosol-mass, and modal-number work entries
-constexpr int nzcnt = 32;     // number of non-zero matrix entries
-constexpr int clscnt4 = 30;   // work entries 1-30; O3 (entry 0) is excluded
-constexpr int extcnt = 9;     // number of species with external forcing
-constexpr int nfs = 8;        // number of fixed species
-constexpr int o3_idx = 0;     // index of O3
-constexpr int indexm = 0;     // total air number density [molecules cm^-3]
+constexpr int nabscol = 2; // number of absorbing densities
+constexpr int rxntot = 7;  // number of total reactions
+constexpr int gas_pcnst =
+    31;                     // gas, aerosol-mass, and modal-number work entries
+constexpr int nzcnt = 32;   // number of non-zero matrix entries
+constexpr int clscnt4 = 30; // work entries 1-30; O3 (entry 0) is excluded
+constexpr int extcnt = 9;   // number of species with external forcing
+constexpr int nfs = 8;      // number of fixed species
+constexpr int o3_idx = 0;   // index of O3
+constexpr int indexm = 0;   // total air number density [molecules cm^-3]
 constexpr auto permute_4 = Kokkos::to_array<int>(
     {0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14,
      15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29});
@@ -120,8 +121,8 @@ KOKKOS_INLINE_FUNCTION
 void adjrxt(Real rate[rxntot], const Real inv[nfs], const Real m) {
   // Convert the bimolecular coefficients into frozen pseudo-first-order
   // coefficients [s^-1] using prescribed densities [molecules cm^-3].
-  // inv[4]=OH, inv[5]=NO3, inv[6]=HO2; m is air number density [molecules cm^-3].
-  // R2: lambda2 = k2(T) * [OH].
+  // inv[4]=OH, inv[5]=NO3, inv[6]=HO2; m is air number density [molecules
+  // cm^-3]. R2: lambda2 = k2(T) * [OH].
   rate[2] *= inv[4];
   // R3: lambda3 = k3(T,M) * [OH].
   rate[3] *= inv[4];
