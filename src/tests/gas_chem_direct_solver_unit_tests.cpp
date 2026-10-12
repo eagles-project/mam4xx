@@ -12,8 +12,15 @@
 #include <array>
 #include <cfenv>
 #include <cmath>
+#include <csignal>
+#include <cstdlib>
 #include <cstring>
 #include <limits>
+
+#if defined(__unix__) || defined(__APPLE__)
+#include <sys/wait.h>
+#include <unistd.h>
+#endif
 
 namespace {
 
@@ -32,7 +39,7 @@ struct SolverOutput {
   std::array<Real, gas_pcnst> state = {};
   std::array<Real, clscnt4> production = {};
   std::array<Real, clscnt4> loss = {};
-  ImpSolResult result;
+  ImpSolOutcome outcome = ImpSolOutcome::InvalidInput;
 };
 
 // These fixtures deliberately overflow so that we can test the solver's
@@ -54,7 +61,7 @@ struct ScopedOverflowTrapDisable {
 
 SolverOutput run_on_device(const SolverCase &input) {
   using RealView = mam4::DeviceType::view_1d<Real>;
-  using ResultView = mam4::DeviceType::view_1d<ImpSolResult>;
+  using OutcomeView = mam4::DeviceType::view_1d<ImpSolOutcome>;
 
   RealView state("gas_state", gas_pcnst);
   RealView rates("gas_rates", rxntot);
@@ -62,7 +69,7 @@ SolverOutput run_on_device(const SolverCase &input) {
   RealView forcing("gas_forcing", extcnt);
   RealView production("gas_production", clscnt4);
   RealView loss("gas_loss", clscnt4);
-  ResultView result("gas_result", 1);
+  OutcomeView outcome("gas_outcome", 1);
 
   auto h_state = Kokkos::create_mirror_view(state);
   auto h_rates = Kokkos::create_mirror_view(rates);
@@ -90,20 +97,19 @@ SolverOutput run_on_device(const SolverCase &input) {
       "direct_gas_chemistry_test", Kokkos::RangePolicy<>(0, 1),
       KOKKOS_LAMBDA(const int) {
         auto local_state = state;
-        ImpSolResult local_result;
-        imp_sol(local_state, rates.data(), het.data(), forcing.data(), dt,
-                production.data(), loss.data(), local_result);
-        result(0) = local_result;
+        outcome(0) =
+            imp_sol(local_state, rates.data(), het.data(), forcing.data(), dt,
+                    production.data(), loss.data());
       });
   Kokkos::fence();
 
   Kokkos::deep_copy(h_state, state);
   auto h_production = Kokkos::create_mirror_view(production);
   auto h_loss = Kokkos::create_mirror_view(loss);
-  auto h_result = Kokkos::create_mirror_view(result);
+  auto h_outcome = Kokkos::create_mirror_view(outcome);
   Kokkos::deep_copy(h_production, production);
   Kokkos::deep_copy(h_loss, loss);
-  Kokkos::deep_copy(h_result, result);
+  Kokkos::deep_copy(h_outcome, outcome);
 
   SolverOutput output;
   for (int j = 0; j < gas_pcnst; ++j) {
@@ -113,14 +119,14 @@ SolverOutput run_on_device(const SolverCase &input) {
     output.production[k] = h_production(k);
     output.loss[k] = h_loss(k);
   }
-  output.result = h_result(0);
+  output.outcome = h_outcome(0);
   return output;
 }
 
 // Test-only reference assembled from the documented chemistry equations,
 // without using production linmat, indprd, or the ordered-solve helper.
-std::array<Real, clscnt4> dense_backward_euler_reference(
-    const SolverCase &input) {
+std::array<Real, clscnt4>
+dense_backward_euler_reference(const SolverCase &input) {
   using Row = std::array<long double, clscnt4>;
   std::array<Row, clscnt4> matrix = {};
   std::array<long double, clscnt4> source = {};
@@ -151,7 +157,8 @@ std::array<Real, clscnt4> dense_backward_euler_reference(
 
   const long double dt = input.dt;
   for (int row = 0; row < clscnt4; ++row) {
-    rhs[row] = static_cast<long double>(input.state[row + 1]) + dt * source[row];
+    rhs[row] =
+        static_cast<long double>(input.state[row + 1]) + dt * source[row];
     for (int col = 0; col < clscnt4; ++col) {
       matrix[row][col] = (row == col ? 1.0L : 0.0L) - dt * matrix[row][col];
     }
@@ -188,17 +195,28 @@ std::array<Real, clscnt4> dense_backward_euler_reference(
 Real source_for_entry(const SolverCase &input, const int k) {
   const auto &f = input.forcing;
   switch (k) {
-  case 0: return input.rates[1];
-  case 2: return f[0];
-  case 4: return f[8];
-  case 5: return f[1];
-  case 12: return f[5];
-  case 13: return f[2];
-  case 17: return f[6];
-  case 26: return f[3];
-  case 27: return f[4];
-  case 29: return f[7];
-  default: return 0;
+  case 0:
+    return input.rates[1];
+  case 2:
+    return f[0];
+  case 4:
+    return f[8];
+  case 5:
+    return f[1];
+  case 12:
+    return f[5];
+  case 13:
+    return f[2];
+  case 17:
+    return f[6];
+  case 26:
+    return f[3];
+  case 27:
+    return f[4];
+  case 29:
+    return f[7];
+  default:
+    return 0;
   }
 }
 
@@ -218,23 +236,23 @@ SolverCase nominal_case() {
     input.het[j] = Real((j % 4 + 1) * 1e-5);
   }
   input.rates = {Real(1e-4), Real(1e-10), Real(3e-4), Real(2e-4),
-                 Real(1e-4), Real(2e-4), Real(3e-4)};
-  input.forcing = {Real(1e-9), Real(1e-11), Real(2e-11),
+                 Real(1e-4), Real(2e-4),  Real(3e-4)};
+  input.forcing = {Real(1e-9),  Real(1e-11), Real(2e-11),
                    Real(1e-11), Real(1e-11), Real(1e4),
-                   Real(2e4), Real(3e4), Real(5e-11)};
+                   Real(2e4),   Real(3e4),   Real(5e-11)};
   return input;
 }
 
 void require_atomic_failure(const SolverCase &input,
                             const ImpSolOutcome expected) {
   const auto output = run_on_device(input);
-  REQUIRE(output.result.outcome == expected);
-  REQUIRE_FALSE(output.result.success());
+  REQUIRE(output.outcome == expected);
   for (int j = 0; j < gas_pcnst; ++j) {
     if (std::isnan(input.state[j])) {
       REQUIRE(std::isnan(output.state[j]));
     } else {
-      REQUIRE(std::memcmp(&output.state[j], &input.state[j], sizeof(Real)) == 0);
+      REQUIRE(std::memcmp(&output.state[j], &input.state[j], sizeof(Real)) ==
+              0);
     }
   }
   for (int k = 0; k < clscnt4; ++k) {
@@ -250,7 +268,7 @@ TEST_CASE("direct gas chemistry matches independent backward Euler",
   const auto input = nominal_case();
   const auto output = run_on_device(input);
   const auto reference = dense_backward_euler_reference(input);
-  REQUIRE(output.result.success());
+  REQUIRE(output.outcome == ImpSolOutcome::Converged);
   REQUIRE(std::memcmp(&output.state[0], &input.state[0], sizeof(Real)) == 0);
 
   const Real tolerance = 128 * std::numeric_limits<Real>::epsilon();
@@ -272,8 +290,8 @@ TEST_CASE("direct gas chemistry matches independent backward Euler",
           output.state[4];
       expected_loss += input.rates[3] * output.state[j];
     } else if (k == 3) {
-      expected_loss += (input.rates[4] + input.rates[5] + input.rates[6]) *
-                       output.state[j];
+      expected_loss +=
+          (input.rates[4] + input.rates[5] + input.rates[6]) * output.state[j];
     }
     REQUIRE(std::abs(output.production[k] - expected_production) <=
             tolerance * entry_scale(output.production[k], expected_production));
@@ -289,12 +307,13 @@ TEST_CASE("direct gas chemistry matches independent backward Euler",
   }
 }
 
-TEST_CASE("direct gas chemistry preserves zero rates and handles timestep scales",
-          "[gas_chem]") {
+TEST_CASE(
+    "direct gas chemistry preserves zero rates and handles timestep scales",
+    "[gas_chem]") {
   SolverCase zero;
   zero.state = nominal_case().state;
   const auto unchanged = run_on_device(zero);
-  REQUIRE(unchanged.result.success());
+  REQUIRE(unchanged.outcome == ImpSolOutcome::Converged);
   for (int j = 0; j < gas_pcnst; ++j) {
     REQUIRE(unchanged.state[j] == zero.state[j]);
   }
@@ -304,7 +323,7 @@ TEST_CASE("direct gas chemistry preserves zero rates and handles timestep scales
     input.dt = dt;
     const auto output = run_on_device(input);
     const auto reference = dense_backward_euler_reference(input);
-    REQUIRE(output.result.success());
+    REQUIRE(output.outcome == ImpSolOutcome::Converged);
     const Real tolerance = 128 * std::numeric_limits<Real>::epsilon();
     for (int k = 0; k < clscnt4; ++k) {
       const int j = k + 1;
@@ -322,7 +341,7 @@ TEST_CASE("direct gas chemistry accepts repaired signed inputs", "[gas_chem]") {
   input.forcing[0] = 2e-6;
   input.forcing[8] = 2e-6;
   const auto output = run_on_device(input);
-  REQUIRE(output.result.success());
+  REQUIRE(output.outcome == ImpSolOutcome::Converged);
   REQUIRE(output.state[3] == Approx(1e-6));
   REQUIRE(output.state[5] == Approx(1e-6));
   REQUIRE(std::memcmp(&output.state[0], &input.state[0], sizeof(Real)) == 0);
@@ -331,7 +350,7 @@ TEST_CASE("direct gas chemistry accepts repaired signed inputs", "[gas_chem]") {
   input.state[5] = 3e-6; // SOAG
   input.forcing[8] = -1e-6;
   const auto signed_source_output = run_on_device(input);
-  REQUIRE(signed_source_output.result.success());
+  REQUIRE(signed_source_output.outcome == ImpSolOutcome::Converged);
   REQUIRE(signed_source_output.state[5] == Approx(Real(2e-6)));
   REQUIRE(signed_source_output.production[4] == Approx(Real(-1e-6)));
   REQUIRE(signed_source_output.loss[4] == 0);
@@ -401,4 +420,34 @@ TEST_CASE("direct backward Euler row rejects an unsafe denominator",
       solve_backward_euler_row(Real(1), Real(0), Real(2), Real(1), updated);
   REQUIRE(outcome == ImpSolOutcome::UnsafeDenominator);
   REQUIRE(updated == Real(-1));
+}
+
+TEST_CASE("model gas chemistry aborts on a negative solved endpoint",
+          "[gas_chem]") {
+#if defined(__unix__) || defined(__APPLE__)
+  const pid_t child = fork();
+  REQUIRE(child >= 0);
+  if (child == 0) {
+    std::signal(SIGABRT, SIG_DFL);
+    std::array<Real, gas_pcnst> state = {};
+    Real photo_rates[mam4::mo_photo::phtcnt] = {};
+    Real extfrc[extcnt] = {};
+    Real invariants[nfs] = {};
+    Real het_rates[gas_pcnst] = {};
+    invariants[indexm] = 1;
+    state[5] = 1e-6;
+    extfrc[8] = -2e-6;
+
+    mam4::microphysics::gas_phase_chemistry(
+        Real(300), Real(1), photo_rates, extfrc, invariants, het_rates, state);
+    std::_Exit(EXIT_SUCCESS);
+  }
+
+  int status = 0;
+  REQUIRE(waitpid(child, &status, 0) == child);
+  REQUIRE(WIFSIGNALED(status));
+  REQUIRE(WTERMSIG(status) == SIGABRT);
+#else
+  SUCCEED("Death-test coverage requires a POSIX process API");
+#endif
 }

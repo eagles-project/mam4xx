@@ -12,21 +12,13 @@ enum class ImpSolOutcome {
   InvalidInput,      // Invalid timestep, nonfinite input, or negative rate.
   NonfiniteResult,   // A calculation produced NaN or infinity.
   UnsafeDenominator, // A backward-Euler denominator was zero or negative.
-  NegativeResult    // A solved implicit state entry was negative.
-};
-
-struct ImpSolResult {
-  ImpSolOutcome outcome = ImpSolOutcome::InvalidInput;
-
-  KOKKOS_INLINE_FUNCTION
-  bool success() const {
-    return outcome == ImpSolOutcome::Converged;
-  }
+  NegativeResult     // A solved implicit state entry was negative.
 };
 
 // temperature is in K; mtot and invariants contain number densities in
 // molecules cm^-3. The three expressions below return effective bimolecular
-// coefficients in cm^3 molecule^-1 s^-1, before adjrxt applies oxidant densities.
+// coefficients in cm^3 molecule^-1 s^-1, before adjrxt applies oxidant
+// densities.
 KOKKOS_INLINE_FUNCTION
 void usrrxt(Real rxt[rxntot], // inout
             const Real temperature, const Real invariants[nfs], const Real mtot,
@@ -147,14 +139,14 @@ ImpSolOutcome solve_backward_euler_row(const Real old, const Real source,
 //   This solver preserves those conversions; it does not redefine their units.
 // - reaction_rates[0] and [2..6], and het_rates[0..30]: s^-1 coefficients;
 //   reaction_rates[1]: H2O2 mixing-ratio source per second.
-// - extfrc[0..8]: already normalized sources in the destination entry unit s^-1.
+// - extfrc[0..8]: already normalized sources in the destination entry unit
+// s^-1.
 // - delt: seconds; prod_out[k] and loss_out[k]: base_sol[k+1] unit s^-1.
 template <typename VectorType>
-KOKKOS_INLINE_FUNCTION void
+KOKKOS_INLINE_FUNCTION ImpSolOutcome
 imp_sol(VectorType &base_sol, const Real reaction_rates[rxntot],
         const Real het_rates[gas_pcnst], const Real extfrc[extcnt],
-        const Real delt, Real prod_out[clscnt4], Real loss_out[clscnt4],
-        ImpSolResult &result) {
+        const Real delt, Real prod_out[clscnt4], Real loss_out[clscnt4]) {
   static_assert(gas_pcnst == 31 && clscnt4 == 30 && nzcnt == 32 &&
                     rxntot == 7 && extcnt == 9,
                 "Cannot compile imp_sol: expected 31 state entries (O3 plus "
@@ -165,18 +157,19 @@ imp_sol(VectorType &base_sol, const Real reaction_rates[rxntot],
   // implicit unknown k is entry k+1, with no reordering. Check the generated
   // species maps at compile time so a changed mapping cannot silently make
   // these formulas update the wrong species.
-  static_assert([]() constexpr {
-    for (int k = 0; k < clscnt4; ++k) {
-      if (clsmap_4[k] != k + 1 || permute_4[k] != k) {
-        return false;
-      }
-    }
-    return true;
-  }(), "Cannot compile imp_sol: the species maps must select state entries "
-       "1-30 in their array order, excluding O3 at entry 0. Update the "
-       "solver indexing to match the changed species mapping.");
+  static_assert(
+      []() constexpr {
+        for (int k = 0; k < clscnt4; ++k) {
+          if (clsmap_4[k] != k + 1 || permute_4[k] != k) {
+            return false;
+          }
+        }
+        return true;
+      }(),
+      "Cannot compile imp_sol: the species maps must select state entries "
+      "1-30 in their array order, excluding O3 at entry 0. Update the "
+      "solver indexing to match the changed species mapping.");
 
-  result = ImpSolResult{};
   for (int k = 0; k < clscnt4; ++k) {
     prod_out[k] = 0;
     loss_out[k] = 0;
@@ -199,7 +192,7 @@ imp_sol(VectorType &base_sol, const Real reaction_rates[rxntot],
     valid_input = valid_input && Kokkos::isfinite(extfrc[i]);
   }
   if (!valid_input) {
-    return;
+    return ImpSolOutcome::InvalidInput;
   }
 
   Real independent[clscnt4] = {};
@@ -210,14 +203,12 @@ imp_sol(VectorType &base_sol, const Real reaction_rates[rxntot],
   linmat(matrix, reaction_rates, het_rates);
   for (int k = 0; k < clscnt4; ++k) {
     if (!Kokkos::isfinite(independent[k])) {
-      result.outcome = ImpSolOutcome::NonfiniteResult;
-      return;
+      return ImpSolOutcome::NonfiniteResult;
     }
   }
   for (int i = 0; i < nzcnt; ++i) {
     if (!Kokkos::isfinite(matrix[i])) {
-      result.outcome = ImpSolOutcome::NonfiniteResult;
-      return;
+      return ImpSolOutcome::NonfiniteResult;
     }
   }
 
@@ -249,11 +240,10 @@ imp_sol(VectorType &base_sol, const Real reaction_rates[rxntot],
   //   DMS + OH  -> 0.5 SO2 + 0.5 HO2     at lambda5 = r5
   //   DMS + NO3 -> SO2 + HNO3             at lambda6 = r6
   // ODE: dq_DMS/dt = -(r4 + r5 + r6 + h4) q_DMS.
-  ImpSolOutcome outcome = solve_backward_euler_row(
-      trial[4], independent[3], matrix[5], delt, trial[4]);
+  ImpSolOutcome outcome = solve_backward_euler_row(trial[4], independent[3],
+                                                   matrix[5], delt, trial[4]);
   if (outcome != ImpSolOutcome::Converged) {
-    result.outcome = outcome;
-    return;
+    return outcome;
   }
 
   // SO2 production and loss:
@@ -262,21 +252,19 @@ imp_sol(VectorType &base_sol, const Real reaction_rates[rxntot],
   // ODE: dq_SO2/dt = b2 + (r4 + 0.5*r5 + r6) q_DMS
   //                   - (r3 + h3) q_SO2.
   const Real so2_source = independent[2] + matrix[4] * trial[4];
-  outcome = solve_backward_euler_row(trial[3], so2_source, matrix[3], delt,
-                                     trial[3]);
+  outcome =
+      solve_backward_euler_row(trial[3], so2_source, matrix[3], delt, trial[3]);
   if (outcome != ImpSolOutcome::Converged) {
-    result.outcome = outcome;
-    return;
+    return outcome;
   }
 
   // H2SO4 production from R3: SO2 + OH -> H2SO4 at lambda3 = r3.
   // ODE: dq_H2SO4/dt = r3 q_SO2 - h2 q_H2SO4.
   const Real h2so4_source = independent[1] + matrix[2] * trial[3];
-  outcome = solve_backward_euler_row(trial[2], h2so4_source, matrix[1],
-                                     delt, trial[2]);
+  outcome = solve_backward_euler_row(trial[2], h2so4_source, matrix[1], delt,
+                                     trial[2]);
   if (outcome != ImpSolOutcome::Converged) {
-    result.outcome = outcome;
-    return;
+    return outcome;
   }
 
   // H2O2 chemistry:
@@ -284,11 +272,10 @@ imp_sol(VectorType &base_sol, const Real reaction_rates[rxntot],
   //   HO2 + HO2 -> H2O2                    at completed source r1
   //   H2O2 + OH -> H2O + HO2               at lambda2 = r2
   // ODE: dq_H2O2/dt = r1 - (r0 + r2 + h1) q_H2O2.
-  outcome = solve_backward_euler_row(trial[1], independent[0], matrix[0],
-                                     delt, trial[1]);
+  outcome = solve_backward_euler_row(trial[1], independent[0], matrix[0], delt,
+                                     trial[1]);
   if (outcome != ImpSolOutcome::Converged) {
-    result.outcome = outcome;
-    return;
+    return outcome;
   }
 
   // SOAG, aerosol-mass entries, and modal particle-number entries each have
@@ -298,8 +285,7 @@ imp_sol(VectorType &base_sol, const Real reaction_rates[rxntot],
     outcome = solve_backward_euler_row(trial[k + 1], independent[k],
                                        matrix[k + 2], delt, trial[k + 1]);
     if (outcome != ImpSolOutcome::Converged) {
-      result.outcome = outcome;
-      return;
+      return outcome;
     }
   }
 
@@ -310,10 +296,8 @@ imp_sol(VectorType &base_sol, const Real reaction_rates[rxntot],
   imp_prod_loss(production, loss, trial, reaction_rates, het_rates);
   for (int k = 0; k < clscnt4; ++k) {
     production[k] = production[k] + independent[k];
-    if (!Kokkos::isfinite(production[k]) ||
-        !Kokkos::isfinite(loss[k])) {
-      result.outcome = ImpSolOutcome::NonfiniteResult;
-      return;
+    if (!Kokkos::isfinite(production[k]) || !Kokkos::isfinite(loss[k])) {
+      return ImpSolOutcome::NonfiniteResult;
     }
   }
 
@@ -325,7 +309,7 @@ imp_sol(VectorType &base_sol, const Real reaction_rates[rxntot],
     prod_out[k] = production[k];
     loss_out[k] = loss[k];
   }
-  result.outcome = ImpSolOutcome::Converged;
+  return ImpSolOutcome::Converged;
 }
 
 } // namespace gas_chemistry

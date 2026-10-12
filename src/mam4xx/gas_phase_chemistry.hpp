@@ -42,15 +42,18 @@ using mam4::gas_chemistry::indexm;
 // modal-number entries 6-30 retain the caller's legacy work-array conversions;
 // their precise physical units should not be inferred from the gas entries.
 // Review needed: reconcile the legacy modal-number unit/conversion conventions.
-// result: terminal status of the full-step update; failure leaves qq unchanged.
+// Any rejected full-step update leaves qq unchanged and aborts this
+// model-facing call with a reason-specific message. Lower-level validation code
+// can call gas_chemistry::imp_sol directly when it needs to inspect the
+// outcome.
 template <typename VectorType>
 KOKKOS_INLINE_FUNCTION gas_chemistry::ImpSolResult gas_phase_chemistry(
     // in
     const Real temp, const Real dt,
     const Real photo_rates[mam4::mo_photo::phtcnt], const Real extfrc[extcnt],
     const Real invariants[nfs], const Real het_rates[gas_pcnst],
-    // inout state; out status
-    VectorType &qq, gas_chemistry::ImpSolResult &result) {
+    // inout state
+    VectorType &qq) {
 
   //=====================================================================
   // Calculate temperature-dependent reaction coefficients. Prescribed
@@ -103,12 +106,30 @@ KOKKOS_INLINE_FUNCTION gas_chemistry::ImpSolResult gas_phase_chemistry(
   }
 
   // Solve one full backward-Euler timestep with fixed rates and forcing.
-  // result reports success or why the step was rejected; imp_sol leaves qq
-  // unchanged on failure. The caller is responsible for stopping on failure.
+  // imp_sol leaves qq unchanged on failure. Fail here so the model cannot
+  // silently continue from a rejected chemistry step.
   using mam4::gas_chemistry::clscnt4;
   Real prod_out[clscnt4], loss_out[clscnt4];
-  mam4::gas_chemistry::imp_sol(qq, reaction_rates, het_rates, extfrc_rates,
-                               dt, prod_out, loss_out, result);
+  const auto outcome = mam4::gas_chemistry::imp_sol(
+      qq, reaction_rates, het_rates, extfrc_rates, dt, prod_out, loss_out);
+  switch (outcome) {
+  case gas_chemistry::ImpSolOutcome::Converged:
+    return;
+  case gas_chemistry::ImpSolOutcome::InvalidInput:
+    Kokkos::abort("gas_phase_chemistry: invalid input; chemistry state was "
+                  "left unchanged");
+  case gas_chemistry::ImpSolOutcome::NonfiniteResult:
+    Kokkos::abort("gas_phase_chemistry: a gas-chemistry calculation produced "
+                  "NaN or infinity; chemistry state was left unchanged");
+  case gas_chemistry::ImpSolOutcome::UnsafeDenominator:
+    Kokkos::abort("gas_phase_chemistry: the backward-Euler denominator was "
+                  "zero or negative; chemistry state was left unchanged");
+  case gas_chemistry::ImpSolOutcome::NegativeResult:
+    Kokkos::abort("gas_phase_chemistry: the backward-Euler update produced a "
+                  "negative state entry; chemistry state was left unchanged");
+  }
+  Kokkos::abort("gas_phase_chemistry: unknown solver outcome; chemistry state "
+                "was left unchanged");
 }
 
 } // namespace microphysics

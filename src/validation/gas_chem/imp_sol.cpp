@@ -25,12 +25,12 @@ void imp_sol(Ensemble *ensemble) {
     std::vector<Real> prod_out(clscnt4, zero);
     std::vector<Real> loss_out(clscnt4, zero);
 
-    ImpSolResult result;
-    imp_sol(base_sol, reaction_rates.data(), het_rates.data(), extfrc.data(),
-            delt, prod_out.data(), loss_out.data(), result);
-    if (!result.success()) {
+    const auto outcome =
+        imp_sol(base_sol, reaction_rates.data(), het_rates.data(),
+                extfrc.data(), delt, prod_out.data(), loss_out.data());
+    if (outcome != ImpSolOutcome::Converged) {
       const char *reason = "unknown solver outcome";
-      switch (result.outcome) {
+      switch (outcome) {
       case ImpSolOutcome::InvalidInput:
         reason = "invalid input: every input must be finite, the timestep "
                  "must be positive, and reaction rates and heterogeneous "
@@ -51,7 +51,7 @@ void imp_sol(Ensemble *ensemble) {
         break;
       }
       std::cerr << "Gas-chemistry validation failed: " << reason
-                << " (outcome code " << static_cast<int>(result.outcome)
+                << " (outcome code " << static_cast<int>(outcome)
                 << "). Chemical state was left unchanged and production/loss "
                    "outputs were set to zero. Stopping validation."
                 << std::endl;
