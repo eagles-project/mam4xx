@@ -3,11 +3,11 @@
 
 #include "gas_chem_mechanism.hpp"
 #include "mam4_math.hpp"
+#include "mam4_types.hpp"
 
 #include <ekat_kernel_assert.hpp>
 
 namespace mam4 {
-
 namespace gas_chemistry {
 using ConstView1D = DeviceType::view_1d<const Real>;
 // BAD CONSTANTs
@@ -18,11 +18,11 @@ const Real rel_err = 1.0e-3;
 const int max_time_steps = 1000;
 
 template <typename VectorType>
-KOKKOS_INLINE_FUNCTION
-void usrrxt(Real rxt[rxntot], // inout
-            const Real temperature, VectorType &invariants, const Real mtot,
-            const int usr_HO2_HO2_ndx, const int usr_DMS_OH_ndx,
-            const int usr_SO2_OH_ndx, const int inv_h2o_ndx) {
+KOKKOS_INLINE_FUNCTION void
+usrrxt(Real rxt[rxntot], // inout
+       const Real temperature, const VectorType &invariants, const Real mtot,
+       const int usr_HO2_HO2_ndx, const int usr_DMS_OH_ndx,
+       const int usr_SO2_OH_ndx, const int inv_h2o_ndx) {
 
   /*-----------------------------------------------------------------
    ... ho2 + ho2 --> h2o2
@@ -73,7 +73,7 @@ void imp_slv_inti(Real epsilon[clscnt4]) {
 template <typename VectorType1, typename VectorType2>
 KOKKOS_INLINE_FUNCTION void newton_raphson_iter(
     const Real dti, const Real lin_jac[nzcnt], const Real lrxt[rxntot],
-    const VectorType1 lhet,         // in
+    const VectorType1 lhet,             // in
     const Real iter_invariant[clscnt4], // in
     const bool factor[itermax], VectorType2 &lsol,
     Real solution[clscnt4],                     // inout
@@ -233,7 +233,7 @@ KOKKOS_INLINE_FUNCTION void newton_raphson_iter(
 template <typename VectorType>
 KOKKOS_INLINE_FUNCTION void
 imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
-        const Real reaction_rates[rxntot], VectorType &het_rates,
+        const Real reaction_rates[rxntot], const VectorType &het_rates,
         const Real extfrc[extcnt], const Real &delt, const bool factor[itermax],
         Real epsilon[clscnt4], Real prod_out[clscnt4], Real loss_out[clscnt4]) {
 

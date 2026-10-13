@@ -7,7 +7,7 @@
 #include <validation.hpp>
 
 using namespace skywalker;
-
+using View1DHost = mam4::HostType::view_1d<Real>;
 void setsox_test(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // Ensemble parameters
@@ -50,12 +50,16 @@ void setsox_test(Ensemble *ensemble) {
 
     const mam4::mo_setsox::Config setsox_config_;
 
-    Real dqdt_aqso4[mam4::AeroConfig::num_gas_phase_species()] = {};
-    Real dqdt_aqh2so4[mam4::AeroConfig::num_gas_phase_species()] = {};
+    View1DHost dqdt_aqso4("dqdt_aqso4",
+                          mam4::AeroConfig::num_gas_phase_species());
+    View1DHost dqdt_aqh2so4("dqdt_aqh2so4",
+                            mam4::AeroConfig::num_gas_phase_species());
+    Kokkos::deep_copy(dqdt_aqso4, 0);
+    Kokkos::deep_copy(dqdt_aqh2so4, 0);
 
     mam4::mo_setsox::setsox_single_level(
         loffset, dt, press, pdel, tfld, mbar, lwc, cldfrc, cldnum, xhnm,
-        setsox_config_, dqdt_aqso4, dqdt_aqh2so4, &qcw[0], &qin[0]);
+        setsox_config_, dqdt_aqso4, dqdt_aqh2so4, qcw, qin);
 
     output.set("qcw", qcw);
     output.set("qin", qin);

@@ -116,12 +116,14 @@ void setsox_test_nlev(Ensemble *ensemble) {
       Kokkos::deep_copy(qin[i], qin_h[i]);
     }
 
+    mam4::ColumnView dqdt_aqso4 = mam4::testing::create_column_view(nspec);
+    mam4::ColumnView dqdt_aqh2so4 = mam4::testing::create_column_view(nspec);
+    Kokkos::deep_copy(dqdt_aqso4, 0);
+    Kokkos::deep_copy(dqdt_aqh2so4, 0);
     // Single-column dispatch.
     auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
-          Real dqdt_aqso4[nspec] = {};
-          Real dqdt_aqh2so4[nspec] = {};
           mam4::mo_setsox::setsox(team, loffset, dt, press, pdel, tfld, mbar,
                                   lwc, cldfrc, cldnum, xhnm, dqdt_aqso4,
                                   dqdt_aqh2so4, qcw, qin);

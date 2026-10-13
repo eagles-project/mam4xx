@@ -39,8 +39,7 @@ using mam4::gas_chemistry::indexm;
 template <typename VectorType>
 KOKKOS_INLINE_FUNCTION void gas_phase_chemistry(
     // in
-    const Real temp, const Real dt,
-    VectorType &photo_rates, VectorType &extfrc,
+    const Real temp, const Real dt, VectorType &photo_rates, VectorType &extfrc,
     VectorType &invariants, VectorType &het_rates,
     // out
     VectorType &qq) {

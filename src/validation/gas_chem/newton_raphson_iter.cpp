@@ -35,7 +35,7 @@ void newton_raphson_iter(Ensemble *ensemble) {
     View1DHost lsol_host(lsol.data(), lsol.size());
 
     newton_raphson_iter(dti, lin_jac.data(), lrxt.data(),
-                        lhet.data(),           // & ! in
+                        lhet,                  // & ! in
                         iter_invariant.data(), //              & ! in
                         factor, lsol_host,
                         solution.data(),        //              & ! inout

@@ -59,9 +59,9 @@ void set_rates(Real rxt_rates[rxntot], Real sol[gas_pcnst]) {
   rxt_rates[6] *= sol[4];
 } // set_rates
 
-template<typename Vector>
-KOKKOS_INLINE_FUNCTION
-void adjrxt(Real rate[rxntot], const Vector &inv, const Real m) {
+template <typename Vector>
+KOKKOS_INLINE_FUNCTION void adjrxt(Real rate[rxntot], const Vector &inv,
+                                   const Real m) {
   rate[2] *= inv[4];
   rate[3] *= inv[4];
   rate[4] *= inv[4];
@@ -227,9 +227,8 @@ void lu_slv(Real lu[nzcnt], Real b[clscnt4]) {
 // concerning lines in imp_prod_loss(), though it's difficult to tell if that
 // results in consistent units
 template <typename VectorType>
-KOKKOS_INLINE_FUNCTION
-void linmat(Real mat[nzcnt], const Real rxt[rxntot],
-            const VectorType &het_rates) {
+KOKKOS_INLINE_FUNCTION void linmat(Real mat[nzcnt], const Real rxt[rxntot],
+                                   const VectorType &het_rates) {
   mat[0] = -(+rxt[0] + rxt[2] + het_rates[1]);
   mat[1] = -(+het_rates[2]);
   mat[2] = +rxt[3];

@@ -13,20 +13,18 @@ using View2D = DeviceType::view_2d<Real>;
 using ConstView1D = DeviceType::view_1d<const Real>;
 
 template <typename Vector1, typename Vector2, typename Vector3>
-KOKKOS_INLINE_FUNCTION
-void mmr2vmr(const Vector1 &q,  // in
-             const Vector2 &mw, // in
-             Vector3 &vmr)      // out
+KOKKOS_INLINE_FUNCTION void mmr2vmr(const Vector1 &q,  // in
+                                    const Vector2 &mw, // in
+                                    Vector3 &vmr)      // out
 {
   for (int i = 0; i < mam4::gas_chemistry::gas_pcnst; ++i) {
     vmr[i] = mam4::conversions::vmr_from_mmr(q[i], mw[i]);
   }
 } // mmr2vmr
 template <typename Vector1, typename Vector2, typename Vector3>
-KOKKOS_INLINE_FUNCTION
-void vmr2mmr(const Vector1 &vmr, // in
-             const Vector2 &mw,  // in
-             Vector3 &q)         // out
+KOKKOS_INLINE_FUNCTION void vmr2mmr(const Vector1 &vmr, // in
+                                    const Vector2 &mw,  // in
+                                    Vector3 &q)         // out
 {
   for (int i = 0; i < mam4::gas_chemistry::gas_pcnst; ++i) {
     q[i] = mam4::conversions::mmr_from_vmr(vmr[i], mw[i]);

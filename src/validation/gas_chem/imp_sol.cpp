@@ -14,9 +14,9 @@ void imp_sol(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     const Real zero = 0;
     auto base_sol = input.get_array("base_sol");
-    const auto reaction_rates = input.get_array("reaction_rates");
-    const auto het_rates = input.get_array("het_rates");
-    const auto extfrc = input.get_array("extfrc");
+    auto reaction_rates = input.get_array("reaction_rates");
+    auto het_rates = input.get_array("het_rates");
+    auto extfrc = input.get_array("extfrc");
     auto delt = input.get_array("delt")[0];
 
     std::vector<Real> prod_out(clscnt4, zero);

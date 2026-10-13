@@ -547,12 +547,11 @@ void calculate_resistance_rlux(
 }
 
 template <typename SubView>
-KOKKOS_INLINE_FUNCTION
-void calculate_gas_drydep_vlc_and_flux(
+KOKKOS_INLINE_FUNCTION void calculate_gas_drydep_vlc_and_flux(
     const seq_drydep::Data &drydep_data, const int beglt, const int endlt,
     const int index_season[n_land_type], const bool fr_lnduse[n_land_type],
     const Real lcl_frc_landuse[n_land_type],
-    SubView &mmr,                // constituent mmrs at surface [kg/kg]
+    SubView &mmr,                   // constituent mmrs at surface [kg/kg]
     const Real dep_ra[n_land_type], // aerodynamic resistance [s/m]
     const Real dep_rb[n_land_type], // sublayer resistance [s/m]
     const Real term,
@@ -562,7 +561,7 @@ void calculate_gas_drydep_vlc_and_flux(
                                              // canopy) [s/m]
     const Real rclx[gas_pcnst][n_land_type], // lower canopy resistance [s/m]
     const Real rgsx[gas_pcnst][n_land_type], // ground resistance [s/m]
-    const Real rdc,         // part of lower canopy resistance [s/m]
+    const Real rdc,       // part of lower canopy resistance [s/m]
     const View1D &dvel,   // deposition velocity [cm/s]
     const View1D &dflx) { // deposition flux [1/cm^2/s]
 
@@ -634,8 +633,7 @@ Real get_saturation_specific_humidity(const Real temperature, // [K]
 }
 
 template <typename SubView>
-KOKKOS_INLINE_FUNCTION
-void drydep_xactive(
+KOKKOS_INLINE_FUNCTION void drydep_xactive(
     const seq_drydep::Data &drydep_data,
     const Real fraction_landuse[n_land_type], // fraction of land use for column
                                               // by land type
@@ -650,10 +648,10 @@ void drydep_xactive(
     const Real spec_hum,                 // specific humidity [kg/kg]
     const Real wind_speed,               // 10-meter wind spped [m/s]
     const Real rain,                     // rain content [??]
-    const Real solar_flux,               // direct shortwave surface radiation [W/m^2]
-    SubView &mmr,                     // constituent MMRs [kg/kg]
-    const View1D &dvel,                     // deposition velocity [cm/s]
-    const View1D &dflx) {                   // deposition flux [1/cm^2/s]
+    const Real solar_flux, // direct shortwave surface radiation [W/m^2]
+    SubView &mmr,          // constituent MMRs [kg/kg]
+    const View1D &dvel,    // deposition velocity [cm/s]
+    const View1D &dflx) {  // deposition flux [1/cm^2/s]
 
   // FIXME: BAD_CONSTANTS
   constexpr Real rain_threshold = 1e-7;   // of the order of 1cm/day [m/s]
