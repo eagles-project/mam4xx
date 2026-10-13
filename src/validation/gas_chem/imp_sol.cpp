@@ -32,9 +32,12 @@ void imp_sol(Ensemble *ensemble) {
     View1DHost base_sol_host("base_sol", base_sol.size());
     for (int i = 0; i < base_sol.size(); ++i)
       base_sol_host(i) = base_sol[i];
+    View1DHost het_rates_host("het_rates", het_rates.size());
+    for (int i = 0; i < het_rates.size(); ++i)
+      het_rates_host(i) = het_rates[i];
 
     imp_sol(base_sol_host, //    ! species mixing ratios [vmr] & !
-            reaction_rates.data(), het_rates.data(), extfrc.data(), delt,
+            reaction_rates.data(), het_rates_host, extfrc.data(), delt,
             factor, epsilon, prod_out.data(), loss_out.data());
 
     for (int i = 0; i < base_sol.size(); ++i)

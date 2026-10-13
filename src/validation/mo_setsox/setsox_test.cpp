@@ -54,13 +54,23 @@ void setsox_test(Ensemble *ensemble) {
                           mam4::AeroConfig::num_gas_phase_species());
     View1DHost dqdt_aqh2so4("dqdt_aqh2so4",
                             mam4::AeroConfig::num_gas_phase_species());
+    View1DHost qcw_host("qcw", qcw.size());
+    View1DHost qin_host("qin", qin.size());
     Kokkos::deep_copy(dqdt_aqso4, 0);
     Kokkos::deep_copy(dqdt_aqh2so4, 0);
+    for (int i=0; i<qcw.size(); ++i)
+      qcw_host(i) = qcw[i];
+    for (int i=0; i<qin.size(); ++i)
+      qin_host(i) = qin[i];
 
     mam4::mo_setsox::setsox_single_level(
         loffset, dt, press, pdel, tfld, mbar, lwc, cldfrc, cldnum, xhnm,
-        setsox_config_, dqdt_aqso4, dqdt_aqh2so4, qcw, qin);
+        setsox_config_, dqdt_aqso4, dqdt_aqh2so4, qcw_host, qin_host);
 
+    for (int i=0; i<qcw.size(); ++i)
+      qcw[i] = qcw_host(i);
+    for (int i=0; i<qin.size(); ++i)
+      qin[i] = qin_host(i);
     output.set("qcw", qcw);
     output.set("qin", qin);
   });

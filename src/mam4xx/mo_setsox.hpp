@@ -728,7 +728,7 @@ void update_tmr_nonzero(Real &tmr, const int idx) {
 } // end update_tmr_nonzero
 
 //=================================================================================
-template <typename Vector>
+template <typename Vector1, typename Vector2>
 KOKKOS_INLINE_FUNCTION void
 sox_cldaero_update(const int loffset, const Real dt, const Real mbar,
                    const Real pdel, const Real press, const Real tfld,
@@ -736,8 +736,8 @@ sox_cldaero_update(const int loffset, const Real dt, const Real mbar,
                    const Real xlwc, const Real delso4_hprxn, const Real xh2so4,
                    const Real xso4, const Real xso4_init, const Config config_,
                    // inout
-                   const ColumnView &dqdt_aqso4, const ColumnView &dqdt_aqh2so4,
-                   Vector &qcw, Vector &qin) {
+                   const Vector1 &dqdt_aqso4, const Vector1 &dqdt_aqh2so4,
+                   Vector2 &qcw, Vector2 &qin) {
   /*
   sox_cldaero_update(loffset, dt, mbar, pdel, press, tfld, cldnum,
                      cldfrc, cfact, cldconc.xlwc, xdelso4hp, xh2so4, xso4,
@@ -938,15 +938,15 @@ sox_cldaero_update(const int loffset, const Real dt, const Real mbar,
 
 //-----------------------------------------------------------------------
 //-----------------------------------------------------------------------
-template <typename Vector>
+template <typename Vector1, typename Vector2>
 KOKKOS_INLINE_FUNCTION void
 setsox_single_level(const int loffset, const Real dt, const Real press,
                     const Real pdel, const Real tfld, const Real mbar,
                     const Real lwc, const Real cldfrc, const Real cldnum,
                     const Real xhnm, Config setsox_config_,
                     // inout
-                    const ColumnView &dqdt_aqso4,
-                    const ColumnView &dqdt_aqh2so4, Vector &qcw, Vector &qin) {
+                    const Vector1 &dqdt_aqso4,
+                    const Vector1 &dqdt_aqh2so4, Vector2 &qcw, Vector2 &qin) {
 
   // setsox_single_level(loffset, dt, press_k, pdel, tfld_k, mbar, lwc_k,
   //                           cldfrc_k, cldnum_k, xhnm_k, setsox_config_,

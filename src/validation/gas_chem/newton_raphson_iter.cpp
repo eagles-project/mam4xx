@@ -15,7 +15,7 @@ void newton_raphson_iter(Ensemble *ensemble) {
     const Real zero = 0;
     const auto lin_jac = input.get_array("lin_jac");
     const auto lrxt = input.get_array("lrxt");
-    const auto lhet = input.get_array("lhet");
+    auto lhet = input.get_array("lhet");
     const auto iter_invariant = input.get_array("iter_invariant");
     auto lsol = input.get_array("lsol");
     auto solution = input.get_array("solution");
@@ -33,13 +33,14 @@ void newton_raphson_iter(Ensemble *ensemble) {
     bool convergence = false;
 
     View1DHost lsol_host(lsol.data(), lsol.size());
+    View1DHost lhet_host(lhet.data(), lhet.size());
 
     newton_raphson_iter(dti, lin_jac.data(), lrxt.data(),
-                        lhet,                  // & ! in
-                        iter_invariant.data(), //              & ! in
+                        lhet_host,             // & ! in
+                        iter_invariant.data(), // & ! in
                         factor, lsol_host,
-                        solution.data(),        //              & ! inout
-                        converged, convergence, //         & ! out
+                        solution.data(),        // & ! inout
+                        converged, convergence, // & ! out
                         prod.data(), loss.data(), max_delta.data(),
                         // work arrays
                         epsilon);

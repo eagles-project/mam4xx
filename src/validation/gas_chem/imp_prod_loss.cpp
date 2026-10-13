@@ -18,7 +18,7 @@ void imp_prod_loss(Ensemble *ensemble) {
 
     const auto rxt = input.get_array("rxt");
     const auto het_rates = input.get_array("het_rates");
-    auto y = input.get_array("y");
+    const auto y = input.get_array("y");
 
     imp_prod_loss(prod.data(), loss.data(), y.data(), rxt.data(),
                   het_rates.data());
