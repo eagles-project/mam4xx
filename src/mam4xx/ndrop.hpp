@@ -248,7 +248,7 @@ loadaer(const SubView &state_q, Real air_density, const int phase,
   } // end imode
 } // loadaer
 
-template <typename SubView>
+template <typename SubView, typename Vector>
 KOKKOS_INLINE_FUNCTION void
 ccncalc(const SubView &state_q, const Real tair,
         const Real qcldbrn[maxd_aspectype][AeroConfig::num_modes()],
@@ -256,7 +256,7 @@ ccncalc(const SubView &state_q, const Real tair,
         const Real voltonumbhi_amode[AeroConfig::num_modes()],
         const Real voltonumblo_amode[AeroConfig::num_modes()],
         const Real exp45logsig[AeroConfig::num_modes()],
-        const Real alogsig[AeroConfig::num_modes()], const ColumnView &ccn) {
+        const Real alogsig[AeroConfig::num_modes()], const Vector &ccn) {
 
   // calculates number concentration of aerosols activated as CCN at
   // supersaturation supersat.
