@@ -37,6 +37,8 @@ void imp_sol(Ensemble *ensemble) {
             reaction_rates.data(), het_rates.data(), extfrc.data(), delt,
             factor, epsilon, prod_out.data(), loss_out.data());
 
+    for (int i = 0; i < base_sol.size(); ++i)
+      base_sol[i] = base_sol_host(i);
     output.set("base_sol", base_sol);
   });
 }
