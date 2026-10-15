@@ -77,6 +77,8 @@ foreach (input
          compute_updraft_mixing_ratio
          ma_convproc_tend
          ma_convproc_dp_intr
+         ma_convproc_intr_ts_355
+         ma_convproc_intr_only_aero_ts_355
          compute_tendencies
          )
 
