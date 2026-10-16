@@ -8,11 +8,39 @@ namespace mam4 {
 namespace gas_chemistry {
 
 enum class ImpSolOutcome {
-  Converged,         // The full requested chemistry timestep was completed.
-  InvalidInput,      // Invalid timestep, nonfinite input, or negative rate.
-  NonfiniteResult,   // A calculation produced NaN or infinity.
-  UnsafeDenominator, // A backward-Euler denominator was zero or negative.
-  NegativeResult     // A solved implicit state entry was negative.
+  // Values 0-5 retain the existing EAMxx legacy diagnostic encoding.
+  Converged = 0,
+  ConvergedAfterRetry = 1,
+  InvalidInput = 2,
+  NonfiniteIterate = 3,
+  CutLimitExhausted = 4,
+  MaximumStepsExhausted = 5,
+  // Direct-solver failures extend that encoding without reusing legacy codes.
+  NonfiniteResult = 6,
+  UnsafeDenominator = 7,
+  NegativeResult = 8
+};
+
+// Accounting for one requested chemistry interval. Intervals are in seconds;
+// counts are nonnegative integers. A failed direct solve accepts zero steps
+// and zero time. Legacy failures may retain successful internal substeps.
+struct ImpSolResult {
+  ImpSolOutcome outcome = ImpSolOutcome::InvalidInput;
+  int failed_attempts = 0;
+  int cut_count = 0;
+  int accepted_steps = 0;
+  Real requested_interval = 0;
+  Real accepted_interval = 0;
+
+  KOKKOS_INLINE_FUNCTION
+  bool success() const {
+    const bool converged = outcome == ImpSolOutcome::Converged ||
+                           outcome == ImpSolOutcome::ConvergedAfterRetry;
+    return converged && Kokkos::isfinite(requested_interval) &&
+           requested_interval > 0 && Kokkos::isfinite(accepted_interval) &&
+           accepted_interval >= 0 &&
+           mam4::abs(requested_interval - accepted_interval) <= 1.0e-4;
+  }
 };
 
 // temperature is in K; mtot and invariants contain number densities in

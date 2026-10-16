@@ -14,33 +14,8 @@ const Real rel_err = 1.0e-3;
 // const Real high_rel_err = 1.0e-4;
 const int max_time_steps = 1000;
 
-enum class ImpSolOutcome {
-  Converged,
-  ConvergedAfterRetry,
-  InvalidInput,
-  NonfiniteIterate,
-  CutLimitExhausted,
-  MaximumStepsExhausted
-};
-
-struct ImpSolResult {
-  ImpSolOutcome outcome = ImpSolOutcome::InvalidInput;
-  int failed_attempts = 0;
-  int cut_count = 0;
-  int accepted_steps = 0;
-  Real requested_interval = 0;
-  Real accepted_interval = 0;
-
-  KOKKOS_INLINE_FUNCTION
-  bool success() const {
-    const bool converged = outcome == ImpSolOutcome::Converged ||
-                           outcome == ImpSolOutcome::ConvergedAfterRetry;
-    return converged && Kokkos::isfinite(requested_interval) &&
-           requested_interval > 0 && Kokkos::isfinite(accepted_interval) &&
-           accepted_interval >= 0 &&
-           mam4::abs(requested_interval - accepted_interval) <= 1.0e-4;
-  }
-};
+using ImpSolOutcome = gas_chemistry::ImpSolOutcome;
+using ImpSolResult = gas_chemistry::ImpSolResult;
 
 // NOTE: at this point we are taking RHS units of (maybe) [1/s] to [s]
 // and the units are internally consistent

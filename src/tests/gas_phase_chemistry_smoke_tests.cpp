@@ -8,8 +8,141 @@
 #include <catch2/catch.hpp>
 #include <mam4_test_config.hpp>
 
+#include <array>
 #include <cmath>
+#include <cstring>
+#include <limits>
 #include <string>
+
+#if defined(MAM4XX_GAS_CHEMISTRY_SOLVER_LEGACY) || defined(NDEBUG)
+namespace {
+
+using mam4::Real;
+using namespace mam4::gas_chemistry;
+
+struct ChemistryOutput {
+  std::array<Real, gas_pcnst> state;
+  ImpSolResult result;
+};
+
+ChemistryOutput run_wrapper(const std::array<Real, gas_pcnst> &initial,
+                            const Real dt, const Real soag_forcing) {
+  using StateView = mam4::DeviceType::view_1d<Real>;
+  using ResultView = mam4::DeviceType::view_1d<ImpSolResult>;
+  StateView state("wrapper_state", gas_pcnst);
+  ResultView result("wrapper_result", 1);
+  auto host_state = Kokkos::create_mirror_view(state);
+  for (int j = 0; j < gas_pcnst; ++j) {
+    host_state(j) = initial[j];
+  }
+  Kokkos::deep_copy(state, host_state);
+  Kokkos::parallel_for(
+      "wrapper_status", Kokkos::RangePolicy<>(0, 1), KOKKOS_LAMBDA(const int) {
+        Real photo_rates[mam4::mo_photo::phtcnt] = {};
+        Real forcing[extcnt] = {};
+        Real invariants[nfs] = {};
+        Real heterogeneous_rates[gas_pcnst] = {};
+        // Synthetic M=1 leaves forcing numerically unchanged by normalization;
+        // zero oxidants and photolysis isolate the external SOAG source.
+        invariants[indexm] = 1;
+        forcing[8] = soag_forcing;
+        result(0) = mam4::microphysics::gas_phase_chemistry(
+            Real(300), dt, photo_rates, forcing, invariants,
+            heterogeneous_rates, state);
+      });
+  Kokkos::fence();
+  const auto accepted =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), state);
+  const auto status =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), result);
+  ChemistryOutput output;
+  output.result = status(0);
+  for (int j = 0; j < gas_pcnst; ++j) {
+    output.state[j] = accepted(j);
+  }
+  return output;
+}
+
+} // namespace
+#endif
+
+TEST_CASE("gas chemistry preserves diagnostic outcome codes", "[gas_chem]") {
+  using mam4::gas_chemistry::ImpSolOutcome;
+  REQUIRE(static_cast<int>(ImpSolOutcome::Converged) == 0);
+  REQUIRE(static_cast<int>(ImpSolOutcome::ConvergedAfterRetry) == 1);
+  REQUIRE(static_cast<int>(ImpSolOutcome::InvalidInput) == 2);
+  REQUIRE(static_cast<int>(ImpSolOutcome::NonfiniteIterate) == 3);
+  REQUIRE(static_cast<int>(ImpSolOutcome::CutLimitExhausted) == 4);
+  REQUIRE(static_cast<int>(ImpSolOutcome::MaximumStepsExhausted) == 5);
+  REQUIRE(static_cast<int>(ImpSolOutcome::NonfiniteResult) == 6);
+  REQUIRE(static_cast<int>(ImpSolOutcome::UnsafeDenominator) == 7);
+  REQUIRE(static_cast<int>(ImpSolOutcome::NegativeResult) == 8);
+}
+
+#if defined(MAM4XX_GAS_CHEMISTRY_SOLVER_LEGACY) || defined(NDEBUG)
+TEST_CASE("configured gas chemistry returns failure accounting", "[gas_chem]") {
+  using namespace mam4::gas_chemistry;
+  using mam4::Real;
+  std::array<Real, gas_pcnst> initial;
+  for (int j = 0; j < gas_pcnst; ++j) {
+    initial[j] = Real(j + 1) * Real(1e-9);
+  }
+  Real dt = 1;
+  Real forcing = 0;
+  SECTION("invalid interval") { dt = -1; }
+  SECTION("negative endpoint") {
+    initial[5] = Real(1e-6);
+    forcing = Real(-2e-6);
+  }
+
+  const auto output = run_wrapper(initial, dt, forcing);
+  const auto result = output.result;
+  REQUIRE_FALSE(result.success());
+  REQUIRE(result.requested_interval == dt);
+
+  if (dt < 0) {
+    REQUIRE(result.outcome == ImpSolOutcome::InvalidInput);
+    REQUIRE(result.accepted_steps == 0);
+    REQUIRE(result.accepted_interval == 0);
+    REQUIRE(result.cut_count == 0);
+#if defined(MAM4XX_GAS_CHEMISTRY_SOLVER_DIRECT)
+    REQUIRE(result.failed_attempts == 1);
+#else
+    REQUIRE(result.failed_attempts == 0);
+#endif
+    for (int j = 0; j < gas_pcnst; ++j) {
+      REQUIRE(std::memcmp(&output.state[j], &initial[j], sizeof(Real)) == 0);
+    }
+  } else {
+#if defined(MAM4XX_GAS_CHEMISTRY_SOLVER_DIRECT)
+    REQUIRE(result.outcome == ImpSolOutcome::NegativeResult);
+    REQUIRE(result.failed_attempts == 1);
+    REQUIRE(result.cut_count == 0);
+    REQUIRE(result.accepted_steps == 0);
+    REQUIRE(result.accepted_interval == 0);
+    for (int j = 0; j < gas_pcnst; ++j) {
+      REQUIRE(std::memcmp(&output.state[j], &initial[j], sizeof(Real)) == 0);
+    }
+#else
+    // Legacy may accept earlier substeps before a later retry fails. Retain
+    // exactly that accepted work and report the incomplete requested interval.
+    REQUIRE(result.outcome == ImpSolOutcome::CutLimitExhausted);
+    REQUIRE(result.failed_attempts > 0);
+    REQUIRE(result.cut_count == 5);
+    REQUIRE(result.accepted_steps > 0);
+    REQUIRE(result.accepted_interval > 0);
+    REQUIRE(result.accepted_interval < dt);
+    REQUIRE(output.state[5] >= 0);
+    REQUIRE(output.state[5] < initial[5]);
+    const Real expected = initial[5] + result.accepted_interval * forcing;
+    const Real tolerance = Real(64) * std::numeric_limits<Real>::epsilon();
+    REQUIRE(std::abs(output.state[5] - expected) <=
+            tolerance * std::abs(initial[5]));
+    REQUIRE(output.state[0] == initial[0]);
+#endif
+  }
+}
+#endif
 
 TEST_CASE("configured gas chemistry solver runs three timesteps",
           "[gas_chem][smoke]") {

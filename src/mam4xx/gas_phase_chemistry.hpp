@@ -50,11 +50,15 @@ using mam4::gas_chemistry::indexm;
 // Review needed: reconcile the legacy modal-number unit/conversion conventions.
 // The direct solver publishes state only after the full step succeeds. The
 // legacy solver publishes each accepted internal substep but never a failed
-// trial. Either solver aborts this model-facing call with a reason-specific
-// message when it does not complete the requested interval. Lower-level code
-// can call the selected namespace's imp_sol directly to inspect its outcome.
+// trial. Legacy failures return their status in every build. Direct failures
+// abort with a reason-specific message when NDEBUG is absent; with NDEBUG,
+// they return failure and leave the complete input state unchanged. Callers
+// must inspect the returned status and record unsuccessful intervals.
+// The returned counts and intervals describe actual accepted work: a failed
+// direct call has one failed attempt, no cuts, no accepted steps, and zero
+// accepted time. Successful direct calls accept one step covering dt seconds.
 template <typename VectorType>
-KOKKOS_INLINE_FUNCTION void gas_phase_chemistry(
+KOKKOS_INLINE_FUNCTION gas_chemistry::ImpSolResult gas_phase_chemistry(
     // in
     const Real temp, const Real dt,
     const Real photo_rates[mam4::mo_photo::phtcnt], const Real extfrc[extcnt],
@@ -117,47 +121,33 @@ KOKKOS_INLINE_FUNCTION void gas_phase_chemistry(
 
 #if defined(MAM4XX_GAS_CHEMISTRY_SOLVER_LEGACY)
   // Apply the corrected PR #586 legacy solver. Each accepted internal substep
-  // is committed, while a failed trial is discarded. Fail here if the full
-  // requested interval was not completed.
+  // is committed, while a failed trial is discarded. Preserve legacy behavior
+  // by returning failures without aborting, including any accepted substeps.
   bool factor[gas_chemistry::legacy::itermax];
   for (int i = 0; i < gas_chemistry::legacy::itermax; ++i) {
     factor[i] = true;
   }
   Real epsilon[clscnt4];
   gas_chemistry::legacy::imp_slv_inti(epsilon);
-  const auto result = gas_chemistry::legacy::imp_sol(
-      qq, reaction_rates, het_rates, extfrc_rates, dt, factor, epsilon,
-      prod_out, loss_out);
-  switch (result.outcome) {
-  case gas_chemistry::legacy::ImpSolOutcome::Converged:
-  case gas_chemistry::legacy::ImpSolOutcome::ConvergedAfterRetry:
-    return;
-  case gas_chemistry::legacy::ImpSolOutcome::InvalidInput:
-    Kokkos::abort("gas_phase_chemistry: invalid input to the legacy solver; "
-                  "the requested chemistry interval was not completed");
-  case gas_chemistry::legacy::ImpSolOutcome::NonfiniteIterate:
-    Kokkos::abort("gas_phase_chemistry: the legacy solver produced NaN or "
-                  "infinity; the requested chemistry interval was not "
-                  "completed");
-  case gas_chemistry::legacy::ImpSolOutcome::CutLimitExhausted:
-    Kokkos::abort("gas_phase_chemistry: the legacy solver exhausted its "
-                  "timestep cuts; the requested chemistry interval was not "
-                  "completed");
-  case gas_chemistry::legacy::ImpSolOutcome::MaximumStepsExhausted:
-    Kokkos::abort("gas_phase_chemistry: the legacy solver exhausted its "
-                  "internal steps; the requested chemistry interval was not "
-                  "completed");
-  }
-  Kokkos::abort("gas_phase_chemistry: unknown legacy solver outcome; the "
-                "requested chemistry interval was not completed");
+  return gas_chemistry::legacy::imp_sol(qq, reaction_rates, het_rates,
+                                        extfrc_rates, dt, factor, epsilon,
+                                        prod_out, loss_out);
 #elif defined(MAM4XX_GAS_CHEMISTRY_SOLVER_DIRECT)
   // Solve one full backward-Euler timestep with fixed rates and forcing. The
   // direct solver leaves qq unchanged on failure.
   const auto outcome = mam4::gas_chemistry::imp_sol(
       qq, reaction_rates, het_rates, extfrc_rates, dt, prod_out, loss_out);
+  gas_chemistry::ImpSolResult result;
+  result.outcome = outcome;
+  result.requested_interval = dt;
+  if (outcome == gas_chemistry::ImpSolOutcome::Converged) {
+    result.accepted_steps = 1;
+    result.accepted_interval = dt;
+    return result;
+  }
+  result.failed_attempts = 1;
+#ifndef NDEBUG
   switch (outcome) {
-  case gas_chemistry::ImpSolOutcome::Converged:
-    return;
   case gas_chemistry::ImpSolOutcome::InvalidInput:
     Kokkos::abort("gas_phase_chemistry: invalid input; chemistry state was "
                   "left unchanged");
@@ -170,9 +160,12 @@ KOKKOS_INLINE_FUNCTION void gas_phase_chemistry(
   case gas_chemistry::ImpSolOutcome::NegativeResult:
     Kokkos::abort("gas_phase_chemistry: the backward-Euler update produced a "
                   "negative state entry; chemistry state was left unchanged");
+  default:
+    Kokkos::abort("gas_phase_chemistry: unknown direct solver outcome; "
+                  "chemistry state was left unchanged");
   }
-  Kokkos::abort("gas_phase_chemistry: unknown solver outcome; chemistry state "
-                "was left unchanged");
+#endif
+  return result;
 #endif
 }
 

@@ -48,6 +48,10 @@ void imp_sol(Ensemble *ensemble) {
         reason = "the backward-Euler update produced a negative state entry";
         break;
       case ImpSolOutcome::Converged:
+      case ImpSolOutcome::ConvergedAfterRetry:
+      case ImpSolOutcome::NonfiniteIterate:
+      case ImpSolOutcome::CutLimitExhausted:
+      case ImpSolOutcome::MaximumStepsExhausted:
         break;
       }
       std::cerr << "Gas-chemistry validation failed: " << reason

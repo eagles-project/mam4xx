@@ -422,7 +422,7 @@ TEST_CASE("direct backward Euler row rejects an unsafe denominator",
   REQUIRE(updated == Real(-1));
 }
 
-#if defined(MAM4XX_GAS_CHEMISTRY_SOLVER_DIRECT)
+#if defined(MAM4XX_GAS_CHEMISTRY_SOLVER_DIRECT) && !defined(NDEBUG)
 TEST_CASE("model gas chemistry aborts on a negative solved endpoint",
           "[gas_chem]") {
 #if defined(__unix__) || defined(__APPLE__)
