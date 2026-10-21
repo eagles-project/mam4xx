@@ -120,8 +120,8 @@ if (MAM4XX_STANDALONE)
   # files for the actions/checkout@v4 ref: option. 
   FetchContent_Declare(
     EKAT
-    GIT_REPOSITORY https://github.com/E3SM-Project/EKAT.git
-    GIT_TAG        007bdcff6cb26948517d2d26f3d7ca005363d119 # 2026/04/13
+    GIT_REPOSITORY https://github.com/odiazib/EKAT.git 
+    GIT_TAG        bcae70646ed9aca77fb8d5beb11acfcd14dc56f9 # 2026/10/16
   )
   list(APPEND mam4xx_tpls EKAT)
 
@@ -170,7 +170,7 @@ if (MAM4XX_ENABLE_SKYWALKER)
   FetchContent_Declare(
     mam_x_validation
     GIT_REPOSITORY https://github.com/E3SM-Project/mam_x_validation.git
-    GIT_TAG        8abea036f30f1d4c3005b205169bd2d4c0a701c3 # 2026/04/23
+    GIT_TAG        fcbab91cb35b8c77fe664f123426371250468e02 # 2026/10/21
   )
   list(APPEND mam4xx_tpls mam_x_validation)
 endif()
