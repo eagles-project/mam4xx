@@ -65,6 +65,7 @@ void init_scratch(
                  mam4::ConvProc::pcnst_extd);
   Kokkos::resize(scratch1Dviews[mam4::ConvProc::sumwetdep],
                  mam4::ConvProc::pcnst_extd);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::x_ratio], config_.nlev);
 }
 
 void get_input(const Input &input, const std::string &name, const int size,
@@ -123,26 +124,27 @@ void ma_convproc_tend(Ensemble *ensemble) {
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     const int nlev = 72;
-    const int ktop = 47;
-    const int kbot = 71;
-    const Real dt = 36000;
-    const mam4::ConvProc::convtype convtype = mam4::ConvProc::Deep;
-    // const int pcnst_extd = mam4::ConvProc::pcnst_extd;
-    const int pcnst = mam4::aero_model::pcnst;
     const int nsrflx = 6;
-    // Fetch ensemble parameters
+    const mam4::ConvProc::convtype convtype = mam4::ConvProc::Deep;
+    const int pcnst = mam4::aero_model::pcnst;
+
+    // Fetch ensemble parameters as arrays
+    auto jt_arr = input.get_array("jt");
+    auto mx_arr = input.get_array("mx");
+    auto il1g_arr = input.get_array("il1g");
+    auto il2g_arr = input.get_array("il2g");
+    auto dt_arr = input.get_array("dt");
+    auto ncnst_arr = input.get_array("ncnst");
+
+    const int jt = std::round(jt_arr[0]);
+    const int mx = std::round(mx_arr[0]);
+    const Real dt = dt_arr[0];
+
     // Convert to C++ index by subtracting one.
     // ktop is jt(il1g) to jt(il2g) in Fortran
-    // but jt is just a scalar and il1g=il2g=48;
-    // kbot is mx(il1g) to jt(il2g) in Fortran
-    // but mx is just a scalar iand l1g=il2g=71;
-    EKAT_ASSERT(input.get("jt") == 48);
-    EKAT_ASSERT(input.get("mx") == 71);
-    EKAT_ASSERT(input.get("il1g") == 1);
-    EKAT_ASSERT(input.get("il2g") == 1);
-    EKAT_ASSERT(input.get("dt") == 3600);
-    EKAT_ASSERT(input.get("ncnst") == 40);
-    EKAT_ASSERT(input.get("nsrflx") == 6);
+    // kbot is mx(il1g) to mx(il2g) in Fortran
+    const int ktop = jt - 1;
+    const int kbot = mx;
 
     int mmtoo_prevap_resusp[pcnst];
     {
@@ -189,8 +191,9 @@ void ma_convproc_tend(Ensemble *ensemble) {
     init_scratch(scratch1Dviews);
 
     mam4::ColumnView scalars_dev = mam4::validation::create_column_view(3);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, 1u);
     Kokkos::parallel_for(
-        "ma_convproc_tend", 1, KOKKOS_LAMBDA(int) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           Real cldfrac[nlev], icwmr[nlev], pmid[nlev], rprd[nlev], dpdry[nlev],
               evapc[nlev], du[nlev], eu[nlev], ed[nlev], dp[nlev],
               temperature[nlev], dqdt[nlev][pcnst], qsrflx[pcnst][nsrflx];
@@ -218,8 +221,8 @@ void ma_convproc_tend(Ensemble *ensemble) {
           Real xx_mfup_max, xx_wcldbase;
           int xx_kcldbase;
           mam4::convproc::ma_convproc_tend(
-              aero_species, scratch1Dviews, nlev, convtype, dt, temperature,
-              pmid, qnew_dev, du, eu, ed, dp, dpdry, ktop, kbot,
+              team, aero_species, scratch1Dviews, nlev, convtype, dt,
+              temperature, pmid, qnew_dev, du, eu, ed, dp, dpdry, ktop, kbot,
               mmtoo_prevap_resusp, cldfrac, icwmr, rprd, evapc, dqdt_view,
               doconvproc, qsrflx, species_class, xx_mfup_max, xx_wcldbase,
               xx_kcldbase);

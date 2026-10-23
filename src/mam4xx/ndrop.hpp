@@ -106,15 +106,14 @@ void get_aer_num(const Real voltonumbhi_amode, const Real voltonumblo_amode,
 } // end get_aer_num
 
 KOKKOS_INLINE_FUNCTION
-void maxsat(
+// Real maximum supersaturation [fraction] (output)
+Real maxsat(
     // TODO: what are zeta and eta?
     const Real zeta,                         // [dimensionless]
     const Real eta[AeroConfig::num_modes()], // [dimensionless]
     const Real nmode,                        // number of modes
     // critical supersaturation for number mode radius [fraction]
-    const Real smode_crit[AeroConfig::num_modes()],
-    Real &smax // maximum supersaturation [fraction] (output)
-) {
+    const Real smode_crit[AeroConfig::num_modes()]) {
 
   /* calculates maximum supersaturation for multiple
         competing aerosol modes.
@@ -122,48 +121,44 @@ void maxsat(
     Abdul-Razzak and Ghan, A parameterization of aerosol activation.
     2. Multiple aerosol types. J. Geophys. Res., 105, 6837-6844. */
 
-  // abdul-razzak functions of width
-  Real ar_func1[AeroConfig::num_modes()];
-  Real ar_func2[AeroConfig::num_modes()];
+  Real smax = {};
 
-  Real const small = 1e-20;     /*BAD CONSTANT*/
-  Real const mid = 1e5;         /*BAD CONSTANT*/
+  Real const small = 1.0e-20;   /*BAD CONSTANT*/
+  Real const mid = 1.0e5;       /*BAD CONSTANT*/
   Real const big = 1.0 / small; /*BAD CONSTANT*/
-  Real sum = 0;
-  Real g1, g2;
-  bool weak_forcing = true; // whether forcing is sufficiently weak or not
+  bool weak_forcing = true;     // whether forcing is sufficiently weak or not
 
-  for (int m = 0; m < nmode; m++) {
+  for (int m = 0; m < nmode && weak_forcing; m++) {
     if (zeta > mid * eta[m] || smode_crit[m] * smode_crit[m] > mid * eta[m]) {
       // weak forcing. essentially none activated
       smax = small;
     } else {
       // significant activation of this mode. calc activation of all modes.
       weak_forcing = false;
-      break;
     }
   }
 
   // if the forcing is weak, return
   if (weak_forcing)
-    return;
+    return smax;
 
+  Real sum = 0;
   for (int m = 0; m < nmode; m++) {
-    ar_func1[m] =
-        0.5 * mam4::exp(2.5 * square(mam4::log(modes(m).mean_std_dev)));
-    ar_func2[m] = 1.0 + 0.25 * mam4::log(modes(m).mean_std_dev);
     if (eta[m] > small) {
-      g1 = (zeta / eta[m]) * mam4::sqrt(zeta / eta[m]);
-      g2 = (smode_crit[m] / mam4::sqrt(eta[m] + 3.0 * zeta)) *
-           mam4::sqrt(smode_crit[m] / mam4::sqrt(eta[m] + 3.0 * zeta));
-      sum += (ar_func1[m] * g1 + ar_func2[m] * g2) /
-             (smode_crit[m] * smode_crit[m]);
+      // abdul-razzak functions of width
+      const Real alogsig = mam4::log(modes(m).mean_std_dev);
+      const Real f1 = 0.5 * mam4::exp(2.5 * alogsig * alogsig);
+      const Real f2 = 1.0 + 0.25 * alogsig;
+      const Real g0 = smode_crit[m] / mam4::sqrt(eta[m] + 3.0 * zeta);
+      const Real g1 = (zeta / eta[m]) * mam4::sqrt(zeta / eta[m]);
+      const Real g2 = g0 * mam4::sqrt(g0);
+      sum += (f1 * g1 + f2 * g2) / (smode_crit[m] * smode_crit[m]);
     } else {
       sum = big;
     }
   }
   smax = 1.0 / mam4::sqrt(sum);
-  return;
+  return smax;
 } // end maxsat
 
 KOKKOS_INLINE_FUNCTION
@@ -426,7 +421,8 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
                     const Real aten, Real fn[AeroConfig::num_modes()],
                     Real fm[AeroConfig::num_modes()],
                     Real fluxn[AeroConfig::num_modes()],
-                    Real fluxm[AeroConfig::num_modes()], Real &flux_fullact) {
+                    Real fluxm[AeroConfig::num_modes()], Real &flux_fullact,
+                    const Real smax_prescribed = mam4::max()) {
   //    ---------------------------------------------------------------------------------
   // Calculates number, surface, and mass fraction of aerosols activated as CCN
   // calculates flux of cloud droplets, surface area, and aerosol mass into
@@ -488,6 +484,11 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
 
   // return if vertical velocity is 0 or negative
   if (w_in <= zero) {
+    return;
+  }
+
+  // return if max supersaturation is 0 or negative
+  if (smax_prescribed <= zero) {
     return;
   }
 
@@ -581,9 +582,12 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
     eta[imode] = etafactor1 * etafactor2[imode];
   } // end imode
 
-  Real supersat = zero;
+  // Find maximum supersaturation
+  // Use smax_prescribed if it is present; otherwise get smax from subr maxsat
+  Real supersat = smax_prescribed;
+  if (smax_prescribed == mam4::max())
+    supersat = maxsat(zeta, eta, nmode, ssat_crit_imode);
 
-  maxsat(zeta, eta, nmode, ssat_crit_imode, supersat);
   // ([fraction]))
   const Real lnsupersat = mam4::log(supersat);
 
@@ -603,7 +607,6 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   // is vertical velocity equal to flux of activated aerosol fraction assuming
   // 100% activation [m/s]?
   flux_fullact = w_in;
-
 } // activate_modal
 
 KOKKOS_INLINE_FUNCTION
